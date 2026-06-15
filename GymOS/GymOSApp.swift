@@ -9,12 +9,14 @@ import SwiftUI
 
 @main
 struct GymOSApp: App {
-    let persistenceController = PersistenceController.shared
-
+    @StateObject private var workoutManager = WorkoutManager()
+    @StateObject private var themeManager = ThemeManager()
+    
     var body: some Scene {
         WindowGroup {
             ContentView()
-                .environment(\.managedObjectContext, persistenceController.container.viewContext)
+                .environmentObject(workoutManager)
+                .environmentObject(themeManager)
         }
     }
 }

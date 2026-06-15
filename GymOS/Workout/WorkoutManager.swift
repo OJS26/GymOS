@@ -260,6 +260,22 @@ class WorkoutManager: ObservableObject {
             .max { ($0.weight * Double($0.reps)) < ($1.weight * Double($1.reps)) }
     }
     
+    // MARK: - Data Analysis
+    var currentStreak: Int {
+        var streak = 0
+        var date = Calendar.current.startOfDay(for: Date())
+        
+        while true {
+            let workoutsOnDay = workouts.filter {
+                Calendar.current.isDate($0.date, inSameDayAs: date)
+            }
+            if workoutsOnDay.isEmpty { break }
+            streak += 1
+            date = Calendar.current.date(byAdding: .day, value: -1, to: date)!
+        }
+        return streak
+    }
+    
     func getLastWorkoutSet(for exercise: Exercise) -> WorkoutSet? {
         let history = getExerciseHistory(for: exercise)
         return history.last?.sets.last { $0.isCompleted }
