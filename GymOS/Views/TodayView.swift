@@ -74,8 +74,9 @@ struct TodayView: View {
                         )
                         .padding(.bottom, 32)
 
-                        // Start button
+                        // Start workout button
                         Button {
+                            workoutManager.startWorkout(name: "Workout")
                             selectedDay = nil
                             showingWorkout = true
                         } label: {
@@ -108,7 +109,9 @@ struct TodayView: View {
 
                                 VStack(spacing: 0) {
                                     ForEach(Array(workoutManager.workoutDays.enumerated()), id: \.element.id) { index, day in
+                                        // Routine row
                                         RoutineRow(day: day) {
+                                            workoutManager.startWorkout(name: day.name, workoutDay: day)
                                             selectedDay = day
                                             showingWorkout = true
                                         }
@@ -135,10 +138,8 @@ struct TodayView: View {
             .navigationBarHidden(true)
         }
         .fullScreenCover(isPresented: $showingWorkout) {
-            Text("Workout")
-                .foregroundColor(.white)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .background(Color(red: 0.05, green: 0.05, blue: 0.07).ignoresSafeArea())
+            ActiveWorkoutView()
+                .environmentObject(workoutManager)
         }
     }
 }

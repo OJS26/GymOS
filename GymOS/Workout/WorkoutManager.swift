@@ -299,6 +299,21 @@ class WorkoutManager: ObservableObject {
         return groupedWorkouts
     }
     
+    func weightSuggestion(for exercise: Exercise) -> String? {
+        let history = getExerciseHistory(for: exercise)
+        guard let lastSession = history.last else { return nil }
+        
+        let completedSets = lastSession.sets.filter { $0.isCompleted }
+        guard !completedSets.isEmpty else { return nil }
+        
+        let avgWeight = completedSets.map { $0.weight }.reduce(0, +) / Double(completedSets.count)
+        let avgReps = completedSets.map { $0.reps }.reduce(0, +) / completedSets.count
+        
+        // If they got 10+ reps on average, suggest a weight increase
+        let suggested = avgReps >= 10 ? avgWeight + 2.5 : avgWeight
+        return "\(suggested.clean)kg"
+    }
+    
     func startRunningSession() {
         currentRunningSession = RunningSession(isActive: true)
     }
