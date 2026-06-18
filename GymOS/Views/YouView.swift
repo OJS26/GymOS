@@ -217,6 +217,7 @@ struct ExerciseLibraryView: View {
     @State private var searchText = ""
     @State private var showingAddExercise = false
     @State private var selectedCategory: Exercise.ExerciseCategory? = nil
+    @State private var editingExercise: Exercise? = nil
 
     var filtered: [Exercise] {
         workoutManager.availableExercises.filter { exercise in
@@ -250,29 +251,40 @@ struct ExerciseLibraryView: View {
 
                     List {
                         ForEach(filtered) { exercise in
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text(exercise.name)
-                                    .font(.system(size: 15, weight: .medium))
-                                    .foregroundColor(.white)
-                                HStack(spacing: 6) {
-                                    Text(exercise.category.rawValue)
-                                        .font(.system(size: 11))
-                                        .foregroundColor(GymOSColors.primaryPurple)
-                                    Text("·")
-                                        .foregroundColor(Color.white.opacity(0.2))
-                                    Text(exercise.muscleGroups.joined(separator: ", "))
-                                        .font(.system(size: 11))
-                                        .foregroundColor(Color.white.opacity(0.35))
+                            Button {
+                                editingExercise = exercise
+                            } label: {
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text(exercise.name)
+                                        .font(.system(size: 15, weight: .medium))
+                                        .foregroundColor(.white)
+                                    HStack(spacing: 6) {
+                                        Text(exercise.category.rawValue)
+                                            .font(.system(size: 11))
+                                            .foregroundColor(GymOSColors.primaryPurple)
+                                        Text("·")
+                                            .foregroundColor(Color.white.opacity(0.2))
+                                        Text(exercise.muscleGroups.joined(separator: ", "))
+                                            .font(.system(size: 11))
+                                            .foregroundColor(Color.white.opacity(0.35))
+                                    }
+                                    if !exercise.note.isEmpty {
+                                        Text(exercise.note)
+                                            .font(.system(size: 11))
+                                            .italic()
+                                            .foregroundColor(GymOSColors.primaryPurple.opacity(0.7))
+                                            .lineLimit(1)
+                                    }
                                 }
+                                .padding(.vertical, 4)
                             }
-                            .padding(.vertical, 4)
                             .listRowBackground(Color.white.opacity(0.04))
                             .swipeActions(edge: .trailing) {
-                                    Button(role: .destructive) {
-                                        workoutManager.deleteExercise(exercise)
-                                    } label: {
-                                        Label("Delete", systemImage: "trash")
-                                    }
+                                Button(role: .destructive) {
+                                    workoutManager.deleteExercise(exercise)
+                                } label: {
+                                    Label("Delete", systemImage: "trash")
+                                }
                             }
                         }
                     }
@@ -298,15 +310,21 @@ struct ExerciseLibraryView: View {
                 }
             }
             .sheet(isPresented: $showingAddExercise) {
-                AddExerciseSheet()
-                    .environmentObject(workoutManager)
-                    .presentationDetents([.height(480)])
-                    .presentationDragIndicator(.visible)
+                            AddExerciseSheet()
+                                .environmentObject(workoutManager)
+                                .presentationDetents([.height(480)])
+                                .presentationDragIndicator(.visible)
+                        }
+                        .sheet(item: $editingExercise) { exercise in
+                            EditExerciseNoteSheet(exercise: exercise)
+                                .environmentObject(workoutManager)
+                                .presentationDetents([.height(320)])
+                                .presentationDragIndicator(.visible)
+                        }
+                    }
+                }
             }
-        }
-    }
-}
-
+            
 // MARK: - Category Chip
 struct CategoryChip: View {
     let title: String
@@ -405,7 +423,63 @@ struct AddExerciseSheet: View {
     }
 }
 
-// MARK: - Routines View
+            // MARK: - Edit Exercise Note Sheet
+struct EditExerciseNoteSheet: View {
+    @EnvironmentObject var workoutManager: WorkoutManager
+    @Environment(\.dismiss) var dismiss
+    let exercise: Exercise
+    @State private var noteText: String = ""
+
+    var body: some View {
+        ZStack {
+            Color(red: 0.08, green: 0.08, blue: 0.10).ignoresSafeArea()
+
+            VStack(alignment: .leading, spacing: 20) {
+                Text(exercise.name)
+                    .font(.system(size: 20, weight: .semibold))
+                    .foregroundColor(.white)
+
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("NOTE")
+                        .font(.system(size: 10, weight: .medium))
+                        .foregroundColor(Color.white.opacity(0.25))
+                        .tracking(1.5)
+                    Text("Shows every time you do this exercise — good for form cues or reminders.")
+                        .font(.system(size: 12))
+                        .foregroundColor(Color.white.opacity(0.3))
+
+                    TextEditor(text: $noteText)
+                        .font(.system(size: 15))
+                        .foregroundColor(.white)
+                        .scrollContentBackground(.hidden)
+                        .frame(height: 100)
+                        .padding(10)
+                        .background(Color.white.opacity(0.06))
+                        .cornerRadius(10)
+                }
+
+                Button {
+                    workoutManager.updateExerciseNote(exercise, note: noteText)
+                    dismiss()
+                } label: {
+                    Text("Save")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 16)
+                        .background(GymOSColors.primaryPurple)
+                        .cornerRadius(14)
+                }
+            }
+            .padding(24)
+        }
+        .onAppear {
+                    noteText = exercise.note
+                }
+            }
+        }
+
+        // MARK: - Routines View
 struct RoutinesView: View {
     @EnvironmentObject var workoutManager: WorkoutManager
     @Environment(\.dismiss) var dismiss

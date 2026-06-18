@@ -1,5 +1,10 @@
 import SwiftUI
 
+struct IdentifiableInt: Identifiable {
+    let id = UUID()
+    let value: Int
+}
+
 // MARK: - Active Workout View
 struct ActiveWorkoutView: View {
     @EnvironmentObject var workoutManager: WorkoutManager
@@ -8,6 +13,7 @@ struct ActiveWorkoutView: View {
     @State private var showingEndConfirm = false
     @State private var logSheet: LogSheetData? = nil
     @State private var completedWorkout: Workout? = nil
+    @State private var notingExerciseIndex: Int? = nil
 
     var body: some View {
         ZStack {
@@ -66,6 +72,9 @@ struct ActiveWorkoutView: View {
                                     },
                                     onRemoveExercise: {
                                         workoutManager.removeExercise(at: exIndex)
+                                    },
+                                    onEditNote: {
+                                        notingExerciseIndex = exIndex
                                     }
                                 )
                             }
@@ -126,6 +135,16 @@ struct ActiveWorkoutView: View {
                 dismiss()
             }
         }
+        
+        .sheet(item: Binding(
+            get: { notingExerciseIndex.map { IdentifiableInt(value: $0) } },
+            set: { notingExerciseIndex = $0?.value }
+        )) { wrapped in
+            SessionNoteSheet(exerciseIndex: wrapped.value)
+                .environmentObject(workoutManager)
+                .presentationDetents([.height(320)])
+                .presentationDragIndicator(.visible)
+        }
     }
 }
 
@@ -145,6 +164,7 @@ struct ExerciseCard: View {
     let onAddSet: () -> Void
     let onDeleteSet: (Int) -> Void
     let onRemoveExercise: () -> Void
+    let onEditNote: () -> Void
 
     @EnvironmentObject var workoutManager: WorkoutManager
     
@@ -162,9 +182,13 @@ struct ExerciseCard: View {
             // Exercise header
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(session.exercise.name)
-                        .font(.system(size: 17, weight: .semibold))
-                        .foregroundColor(.white)
+                    Button {
+                        onEditNote()
+                    } label: {
+                        Text(session.exercise.name)
+                            .font(.system(size: 17, weight: .semibold))
+                            .foregroundColor(.white)
+                    }
 
                     if let last = lastSession {
                         Text("Last: " + last.sets.filter { $0.isCompleted }.map {
@@ -173,6 +197,21 @@ struct ExerciseCard: View {
                         .font(.system(size: 12))
                         .foregroundColor(Color.white.opacity(0.3))
                         .lineLimit(1)
+                    }
+
+                    if !session.exercise.note.isEmpty {
+                        Text(session.exercise.note)
+                            .font(.system(size: 12))
+                            .italic()
+                            .foregroundColor(GymOSColors.primaryPurple.opacity(0.7))
+                            .lineLimit(2)
+                    }
+                    
+                    if !session.notes.isEmpty {
+                        Text("📝 " + session.notes)
+                            .font(.system(size: 12))
+                            .foregroundColor(Color.white.opacity(0.5))
+                            .lineLimit(2)
                     }
                 }
 
@@ -497,6 +536,59 @@ struct ExercisePickerView: View {
                         .foregroundColor(GymOSColors.primaryPurple)
                 }
             }
+        }
+    }
+}
+
+// MARK: - Session Note Sheet
+struct SessionNoteSheet: View {
+    @EnvironmentObject var workoutManager: WorkoutManager
+    @Environment(\.dismiss) var dismiss
+    let exerciseIndex: Int
+    @State private var noteText: String = ""
+
+    var body: some View {
+        ZStack {
+            Color(red: 0.08, green: 0.08, blue: 0.10).ignoresSafeArea()
+
+            VStack(alignment: .leading, spacing: 20) {
+                Text(workoutManager.currentWorkout?.exercises[exerciseIndex].exercise.name ?? "")
+                    .font(.system(size: 20, weight: .semibold))
+                    .foregroundColor(.white)
+
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("NOTE FOR TODAY")
+                        .font(.system(size: 10, weight: .medium))
+                        .foregroundColor(Color.white.opacity(0.25))
+                        .tracking(1.5)
+
+                    TextEditor(text: $noteText)
+                        .font(.system(size: 15))
+                        .foregroundColor(.white)
+                        .scrollContentBackground(.hidden)
+                        .frame(height: 100)
+                        .padding(10)
+                        .background(Color.white.opacity(0.06))
+                        .cornerRadius(10)
+                }
+
+                Button {
+                    workoutManager.currentWorkout?.exercises[exerciseIndex].notes = noteText
+                    dismiss()
+                } label: {
+                    Text("Save")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 16)
+                        .background(GymOSColors.primaryPurple)
+                        .cornerRadius(14)
+                }
+            }
+            .padding(24)
+        }
+        .onAppear {
+            noteText = workoutManager.currentWorkout?.exercises[exerciseIndex].notes ?? ""
         }
     }
 }

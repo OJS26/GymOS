@@ -153,6 +153,13 @@ class WorkoutManager: ObservableObject {
         saveData()
     }
     
+    func updateExerciseNote(_ exercise: Exercise, note: String) {
+        if let index = availableExercises.firstIndex(where: { $0.id == exercise.id }) {
+            availableExercises[index].note = note
+            saveData()
+        }
+    }
+    
     // MARK: - Workout Day Management
     func addWorkoutDay(name: String, exercises: [Exercise], color: String) {
         let workoutDay = WorkoutDay(name: name, exercises: exercises, color: color)

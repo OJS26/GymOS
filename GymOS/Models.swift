@@ -22,13 +22,15 @@ struct Exercise: Identifiable, Codable {
     let category: ExerciseCategory
     let muscleGroups: [String]
     let isCustom: Bool // Track if user created this exercise
+    var note: String = "" // Persistent note - shows every time (e.g. form cues)
     
-    init(name: String, category: ExerciseCategory, muscleGroups: [String], isCustom: Bool = false) {
+    init(name: String, category: ExerciseCategory, muscleGroups: [String], isCustom: Bool = false, note: String = "") {
         self.id = UUID()
         self.name = name
         self.category = category
         self.muscleGroups = muscleGroups
         self.isCustom = isCustom
+        self.note = note
     }
     
     enum ExerciseCategory: String, CaseIterable, Codable {
@@ -102,8 +104,10 @@ struct Workout: Identifiable, Codable {
     var duration: TimeInterval = 0
     var isActive: Bool = false
     var workoutDay: WorkoutDay? // Link to the day template used
+    var reflectionScore: Int? = nil // 1-10 how the session felt
+    var reflectionNotes: String = ""
     
-    init(date: Date, name: String, exercises: [ExerciseSession] = [], duration: TimeInterval = 0, isActive: Bool = false, workoutDay: WorkoutDay? = nil) {
+    init(date: Date, name: String, exercises: [ExerciseSession] = [], duration: TimeInterval = 0, isActive: Bool = false, workoutDay: WorkoutDay? = nil, reflectionScore: Int? = nil, reflectionNotes: String = "") {
         self.id = UUID()
         self.date = date
         self.name = name
@@ -111,6 +115,8 @@ struct Workout: Identifiable, Codable {
         self.duration = duration
         self.isActive = isActive
         self.workoutDay = workoutDay
+        self.reflectionScore = reflectionScore
+        self.reflectionNotes = reflectionNotes
     }
 }
 
