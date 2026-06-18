@@ -268,13 +268,11 @@ struct ExerciseLibraryView: View {
                             .padding(.vertical, 4)
                             .listRowBackground(Color.white.opacity(0.04))
                             .swipeActions(edge: .trailing) {
-                                if exercise.isCustom {
                                     Button(role: .destructive) {
                                         workoutManager.deleteExercise(exercise)
                                     } label: {
                                         Label("Delete", systemImage: "trash")
                                     }
-                                }
                             }
                         }
                     }

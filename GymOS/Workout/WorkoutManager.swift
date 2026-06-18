@@ -4,7 +4,11 @@ import Foundation
 // MARK: - Workout Manager
 class WorkoutManager: ObservableObject {
     @Published var workouts: [Workout] = []
-    @Published var currentWorkout: Workout?
+    @Published var currentWorkout: Workout? {
+        didSet {
+            saveCurrentWorkout()
+        }
+    }
     @Published var availableExercises: [Exercise] = []
     @Published var workoutDays: [WorkoutDay] = []
     @Published var runningSessions: [RunningSession] = []
@@ -25,6 +29,7 @@ class WorkoutManager: ObservableObject {
         loadData()
         loadRunningData() 
         loadRestTimerSettings()
+        loadCurrentWorkout()
     }
     
     // MARK: - Rest Timer Functions
@@ -342,6 +347,26 @@ class WorkoutManager: ObservableObject {
     }
     
     // MARK: - Data Persistence
+    private func saveCurrentWorkout() {
+        if let workout = currentWorkout, let encoded = try? JSONEncoder().encode(workout) {
+            UserDefaults.standard.set(encoded, forKey: "currentWorkout")
+            print("✅ Saved current workout: \(workout.name), exercises: \(workout.exercises.count)")
+        } else {
+            UserDefaults.standard.removeObject(forKey: "currentWorkout")
+            print("🗑️ Cleared current workout")
+        }
+    }
+
+    private func loadCurrentWorkout() {
+        if let data = UserDefaults.standard.data(forKey: "currentWorkout"),
+           let decoded = try? JSONDecoder().decode(Workout.self, from: data) {
+            currentWorkout = decoded
+            print("📦 Loaded current workout: \(decoded.name), exercises: \(decoded.exercises.count)")
+        } else {
+            print("❌ No saved workout found")
+        }
+    }
+
     private func saveData() {
         if let encoded = try? JSONEncoder().encode(workouts) {
             UserDefaults.standard.set(encoded, forKey: "workouts")

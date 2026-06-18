@@ -63,6 +63,9 @@ struct ActiveWorkoutView: View {
                                     },
                                     onDeleteSet: { setIndex in
                                         workoutManager.removeSet(exerciseIndex: exIndex, setIndex: setIndex)
+                                    },
+                                    onRemoveExercise: {
+                                        workoutManager.removeExercise(at: exIndex)
                                     }
                                 )
                             }
@@ -111,7 +114,10 @@ struct ActiveWorkoutView: View {
                 .environmentObject(workoutManager)
         }
         .confirmationDialog("End workout?", isPresented: $showingEndConfirm, titleVisibility: .visible) {
-            Button("End & discard", role: .destructive) { dismiss() }
+            Button("End & discard", role: .destructive) {
+                workoutManager.currentWorkout = nil
+                dismiss()
+            }
             Button("Cancel", role: .cancel) {}
         }
         .fullScreenCover(item: $completedWorkout) { workout in
@@ -138,9 +144,10 @@ struct ExerciseCard: View {
     let onLogSet: (Int) -> Void
     let onAddSet: () -> Void
     let onDeleteSet: (Int) -> Void
+    let onRemoveExercise: () -> Void
 
     @EnvironmentObject var workoutManager: WorkoutManager
-
+    
     private var lastSession: ExerciseSession? {
         workoutManager.getExerciseHistory(for: session.exercise).last
     }
@@ -180,9 +187,20 @@ struct ExerciseCard: View {
                         .background(GymOSColors.primaryPurple.opacity(0.12))
                         .cornerRadius(8)
                 }
+
+                Menu {
+                    Button(role: .destructive) {
+                        onRemoveExercise()
+                    } label: {
+                        Label("Remove exercise", systemImage: "trash")
+                    }
+                } label: {
+                    Image(systemName: "ellipsis")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(Color.white.opacity(0.3))
+                        .padding(.leading, 8)
+                }
             }
-            .padding(.horizontal, 20)
-            .padding(.bottom, 14)
 
             // Column headers
             HStack {

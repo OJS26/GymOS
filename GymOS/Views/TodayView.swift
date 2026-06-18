@@ -55,6 +55,34 @@ struct TodayView: View {
                         .padding(.horizontal, 24)
                         .padding(.top, 20)
                         .padding(.bottom, 32)
+                        
+                        // Resume workout banner
+                        if workoutManager.currentWorkout != nil {
+                            Button {
+                                showingWorkout = true
+                            } label: {
+                                HStack {
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        Text("WORKOUT IN PROGRESS")
+                                            .font(.system(size: 10, weight: .medium))
+                                            .foregroundColor(.white.opacity(0.7))
+                                            .tracking(1.5)
+                                        Text(workoutManager.currentWorkout?.name ?? "Workout")
+                                            .font(.system(size: 16, weight: .semibold))
+                                            .foregroundColor(.white)
+                                    }
+                                    Spacer()
+                                    Image(systemName: "arrow.right.circle.fill")
+                                        .font(.system(size: 24))
+                                        .foregroundColor(.white)
+                                }
+                                .padding(16)
+                                .background(GymOSColors.primaryPurple)
+                                .cornerRadius(14)
+                            }
+                            .padding(.horizontal, 24)
+                            .padding(.bottom, 24)
+                        }
 
                         // Stats row
                         HStack(spacing: 1) {
