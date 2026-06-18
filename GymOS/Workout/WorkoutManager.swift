@@ -205,14 +205,15 @@ class WorkoutManager: ObservableObject {
         currentWorkout = workout
     }
     
-    func endWorkout() {
-        guard var workout = currentWorkout else { return }
+    func finishWorkout(reflectionScore: Int, reflectionNotes: String) -> Workout? {
+        guard var workout = currentWorkout else { return nil }
         workout.isActive = false
+        workout.reflectionScore = reflectionScore
+        workout.reflectionNotes = reflectionNotes
         workouts.insert(workout, at: 0)
         currentWorkout = nil
-        _ = stopRestTimer()
-        // Could save this to the workout or log it // Stop any active rest timer
         saveData()
+        return workout
     }
     
     func addExercise(_ exercise: Exercise) {

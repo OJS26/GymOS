@@ -14,6 +14,7 @@ struct ActiveWorkoutView: View {
     @State private var logSheet: LogSheetData? = nil
     @State private var completedWorkout: Workout? = nil
     @State private var notingExerciseIndex: Int? = nil
+    @State private var showingReflection = false
 
     var body: some View {
         ZStack {
@@ -38,8 +39,7 @@ struct ActiveWorkoutView: View {
                     Spacer()
 
                     Button("Finish") {
-                        workoutManager.endWorkout()
-                        completedWorkout = workoutManager.workouts.first
+                        showingReflection = true
                     }
                     .font(.system(size: 15, weight: .semibold))
                     .foregroundColor(GymOSColors.primaryPurple)
@@ -144,6 +144,15 @@ struct ActiveWorkoutView: View {
                 .environmentObject(workoutManager)
                 .presentationDetents([.height(320)])
                 .presentationDragIndicator(.visible)
+        }
+        
+        .fullScreenCover(isPresented: $showingReflection) {
+            ReflectionView { score, notes in
+                showingReflection = false
+                if let finished = workoutManager.finishWorkout(reflectionScore: score, reflectionNotes: notes) {
+                    completedWorkout = finished
+                }
+            }
         }
     }
 }
@@ -432,14 +441,6 @@ struct LogSetSheet: View {
                             .padding(14)
                             .background(Color.white.opacity(0.06))
                             .cornerRadius(10)
-                            .toolbar {
-                                ToolbarItemGroup(placement: .keyboard) {
-                                    Spacer()
-                                    Button("Done") {
-                                        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
-                                    }
-                                }
-                            }
                     }
 
                     VStack(alignment: .leading, spacing: 8) {
@@ -456,14 +457,6 @@ struct LogSetSheet: View {
                             .padding(14)
                             .background(Color.white.opacity(0.06))
                             .cornerRadius(10)
-                            .toolbar {
-                                ToolbarItemGroup(placement: .keyboard) {
-                                    Spacer()
-                                    Button("Done") {
-                                        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
-                                    }
-                                }
-                            }
                     }
                 }
 
@@ -486,6 +479,9 @@ struct LogSetSheet: View {
                 .disabled(weightText.isEmpty || repsText.isEmpty)
             }
             .padding(24)
+        }
+        .onTapGesture {
+            UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
         }
     }
 }
@@ -589,6 +585,93 @@ struct SessionNoteSheet: View {
         }
         .onAppear {
             noteText = workoutManager.currentWorkout?.exercises[exerciseIndex].notes ?? ""
+        }
+    }
+}
+
+// MARK: - Reflection View
+struct ReflectionView: View {
+    let onComplete: (Int, String) -> Void
+    @State private var score: Int = 7
+    @State private var notes: String = ""
+
+    var body: some View {
+        ZStack {
+            Color(red: 0.05, green: 0.05, blue: 0.07).ignoresSafeArea()
+
+            VStack(alignment: .leading, spacing: 28) {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Session check-in")
+                        .font(.system(size: 28, weight: .bold))
+                        .foregroundColor(.white)
+                    Text("How did that feel?")
+                        .font(.system(size: 14))
+                        .foregroundColor(Color.white.opacity(0.35))
+                }
+                .padding(.top, 40)
+
+                VStack(alignment: .leading, spacing: 16) {
+                    HStack {
+                        Text("\(score)")
+                            .font(.system(size: 48, weight: .bold, design: .rounded))
+                            .foregroundColor(GymOSColors.primaryPurple)
+                        Text("/ 10")
+                            .font(.system(size: 18, weight: .medium))
+                            .foregroundColor(Color.white.opacity(0.3))
+                    }
+
+                    Slider(value: Binding(
+                        get: { Double(score) },
+                        set: { score = Int($0) }
+                    ), in: 1...10, step: 1)
+                    .tint(GymOSColors.primaryPurple)
+
+                    HStack {
+                        Text("Rough one")
+                            .font(.system(size: 11))
+                            .foregroundColor(Color.white.opacity(0.3))
+                        Spacer()
+                        Text("Crushed it")
+                            .font(.system(size: 11))
+                            .foregroundColor(Color.white.opacity(0.3))
+                    }
+                }
+                .padding(20)
+                .background(Color.white.opacity(0.04))
+                .cornerRadius(16)
+
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("NOTES (OPTIONAL)")
+                        .font(.system(size: 10, weight: .medium))
+                        .foregroundColor(Color.white.opacity(0.25))
+                        .tracking(1.5)
+
+                    TextEditor(text: $notes)
+                        .font(.system(size: 15))
+                        .foregroundColor(.white)
+                        .scrollContentBackground(.hidden)
+                        .frame(height: 120)
+                        .padding(10)
+                        .background(Color.white.opacity(0.06))
+                        .cornerRadius(10)
+                }
+
+                Spacer()
+
+                Button {
+                    onComplete(score, notes)
+                } label: {
+                    Text("Save & finish")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 18)
+                        .background(GymOSColors.primaryPurple)
+                        .cornerRadius(14)
+                }
+                .padding(.bottom, 20)
+            }
+            .padding(24)
         }
     }
 }

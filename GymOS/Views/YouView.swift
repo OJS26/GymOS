@@ -852,43 +852,73 @@ struct AddRoutineView: View {
         }
         
         // MARK: - Workout Detail View
-        struct WorkoutDetailView: View {
-            let workout: Workout
-            
-            var body: some View {
-                ZStack {
-                    Color(red: 0.05, green: 0.05, blue: 0.07).ignoresSafeArea()
-                    
-                    List {
-                        ForEach(workout.exercises) { session in
-                            Section {
-                                ForEach(Array(session.sets.enumerated()), id: \.element.id) { index, set in
-                                    if set.isCompleted {
-                                        HStack {
-                                            Text("Set \(index + 1)")
-                                                .font(.system(size: 13))
-                                                .foregroundColor(Color.white.opacity(0.4))
-                                            Spacer()
-                                            Text("\(set.weight.clean)kg × \(set.reps)")
-                                                .font(.system(size: 14, weight: .medium))
-                                                .foregroundColor(.white)
-                                        }
-                                        .listRowBackground(Color.white.opacity(0.04))
-                                    }
+struct WorkoutDetailView: View {
+    let workout: Workout
+
+    var body: some View {
+        ZStack {
+            Color(red: 0.05, green: 0.05, blue: 0.07).ignoresSafeArea()
+
+            List {
+                if let score = workout.reflectionScore {
+                    Section {
+                        HStack {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("Session check-in")
+                                    .font(.system(size: 13, weight: .medium))
+                                    .foregroundColor(Color.white.opacity(0.4))
+                                if !workout.reflectionNotes.isEmpty {
+                                    Text(workout.reflectionNotes)
+                                        .font(.system(size: 13))
+                                        .foregroundColor(.white)
+                                        .padding(.top, 2)
                                 }
-                            } header: {
-                                Text(session.exercise.name)
-                                    .foregroundColor(GymOSColors.primaryPurple)
+                            }
+                            Spacer()
+                            Text("\(score)/10")
+                                .font(.system(size: 20, weight: .bold, design: .rounded))
+                                .foregroundColor(GymOSColors.primaryPurple)
+                        }
+                        .listRowBackground(Color.white.opacity(0.04))
+                        .padding(.vertical, 6)
+                    }
+                }
+
+                ForEach(workout.exercises) { session in
+                    Section {
+                        ForEach(Array(session.sets.enumerated()), id: \.element.id) { index, set in
+                            if set.isCompleted {
+                                HStack {
+                                    Text("Set \(index + 1)")
+                                        .font(.system(size: 13))
+                                        .foregroundColor(Color.white.opacity(0.4))
+                                    Spacer()
+                                    Text("\(set.weight.clean)kg × \(set.reps)")
+                                        .font(.system(size: 14, weight: .medium))
+                                        .foregroundColor(.white)
+                                }
+                                .listRowBackground(Color.white.opacity(0.04))
                             }
                         }
+                        if !session.notes.isEmpty {
+                            Text("📝 " + session.notes)
+                                .font(.system(size: 12))
+                                .foregroundColor(Color.white.opacity(0.5))
+                                .listRowBackground(Color.white.opacity(0.04))
+                        }
+                    } header: {
+                        Text(session.exercise.name)
+                            .foregroundColor(GymOSColors.primaryPurple)
                     }
-                    .listStyle(.insetGrouped)
-                    .scrollContentBackground(.hidden)
                 }
-                .navigationTitle(workout.name)
-                .navigationBarTitleDisplayMode(.inline)
             }
+            .listStyle(.insetGrouped)
+            .scrollContentBackground(.hidden)
         }
+        .navigationTitle(workout.name)
+        .navigationBarTitleDisplayMode(.inline)
+    }
+}
         
         #Preview {
             YouView()
