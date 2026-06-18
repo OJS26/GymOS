@@ -523,28 +523,49 @@ struct AddRoutineView: View {
                     }
 
                     Section {
-                        ForEach(filtered) { exercise in
-                            HStack {
-                                Image(systemName: selectedExercises.contains(exercise.id) ? "checkmark.circle.fill" : "circle")
-                                    .foregroundColor(selectedExercises.contains(exercise.id) ? GymOSColors.primaryPurple : Color.white.opacity(0.3))
-                                VStack(alignment: .leading, spacing: 3) {
-                                    Text(exercise.name)
-                                        .font(.system(size: 15))
-                                        .foregroundColor(.white)
-                                    Text(exercise.category.rawValue)
-                                        .font(.system(size: 12))
-                                        .foregroundColor(Color.white.opacity(0.35))
+                        ForEach(Exercise.ExerciseCategory.allCases, id: \.self) { category in
+                            let categoryExercises = filtered.filter { $0.category == category }
+                            if !categoryExercises.isEmpty {
+                                DisclosureGroup {
+                                    ForEach(categoryExercises) { exercise in
+                                        HStack {
+                                            Image(systemName: selectedExercises.contains(exercise.id) ? "checkmark.circle.fill" : "circle")
+                                                .foregroundColor(selectedExercises.contains(exercise.id) ? GymOSColors.primaryPurple : Color.white.opacity(0.3))
+                                            VStack(alignment: .leading, spacing: 3) {
+                                                Text(exercise.name)
+                                                    .font(.system(size: 15))
+                                                    .foregroundColor(.white)
+                                                Text(exercise.muscleGroups.joined(separator: ", "))
+                                                    .font(.system(size: 12))
+                                                    .foregroundColor(Color.white.opacity(0.35))
+                                            }
+                                        }
+                                        .contentShape(Rectangle())
+                                        .onTapGesture {
+                                            if selectedExercises.contains(exercise.id) {
+                                                selectedExercises.remove(exercise.id)
+                                            } else {
+                                                selectedExercises.insert(exercise.id)
+                                            }
+                                        }
+                                        .listRowBackground(Color.white.opacity(0.04))
+                                    }
+                                } label: {
+                                    HStack {
+                                        Text(category.rawValue)
+                                            .font(.system(size: 14, weight: .medium))
+                                            .foregroundColor(.white)
+                                        Spacer()
+                                        let selectedCount = categoryExercises.filter { selectedExercises.contains($0.id) }.count
+                                        if selectedCount > 0 {
+                                            Text("\(selectedCount)")
+                                                .font(.system(size: 12, weight: .semibold))
+                                                .foregroundColor(GymOSColors.primaryPurple)
+                                        }
+                                    }
                                 }
+                                .listRowBackground(Color.white.opacity(0.04))
                             }
-                            .contentShape(Rectangle())
-                            .onTapGesture {
-                                if selectedExercises.contains(exercise.id) {
-                                    selectedExercises.remove(exercise.id)
-                                } else {
-                                    selectedExercises.insert(exercise.id)
-                                }
-                            }
-                            .listRowBackground(Color.white.opacity(0.04))
                         }
                     } header: {
                         Text("Exercises")
@@ -578,203 +599,224 @@ struct AddRoutineView: View {
 }
 
 // MARK: - Edit Routine View
-struct EditRoutineView: View {
-    let day: WorkoutDay
-    @EnvironmentObject var workoutManager: WorkoutManager
-    @Environment(\.dismiss) var dismiss
-    @State private var name: String
-    @State private var selectedColor: String
-    @State private var selectedExercises: Set<UUID>
-    @State private var searchText = ""
-
-    let colors = ["blue", "green", "orange", "purple", "red", "pink", "yellow", "cyan"]
-
-    init(day: WorkoutDay) {
-        self.day = day
-        _name = State(initialValue: day.name)
-        _selectedColor = State(initialValue: day.color)
-        _selectedExercises = State(initialValue: Set(day.exercises.map { $0.id }))
-    }
-
-    var filtered: [Exercise] {
-        if searchText.isEmpty { return workoutManager.availableExercises }
-        return workoutManager.availableExercises.filter {
-            $0.name.localizedCaseInsensitiveContains(searchText)
+    struct EditRoutineView: View {
+        let day: WorkoutDay
+        @EnvironmentObject var workoutManager: WorkoutManager
+        @Environment(\.dismiss) var dismiss
+        @State private var name: String
+        @State private var selectedColor: String
+        @State private var selectedExercises: Set<UUID>
+        @State private var searchText = ""
+        
+        let colors = ["blue", "green", "orange", "purple", "red", "pink", "yellow", "cyan"]
+        
+        init(day: WorkoutDay) {
+            self.day = day
+            _name = State(initialValue: day.name)
+            _selectedColor = State(initialValue: day.color)
+            _selectedExercises = State(initialValue: Set(day.exercises.map { $0.id }))
         }
-    }
-
-    var body: some View {
-        ZStack {
-            Color(red: 0.05, green: 0.05, blue: 0.07).ignoresSafeArea()
-
-            List {
-                Section {
-                    TextField("Routine name", text: $name)
-                        .foregroundColor(.white)
-                        .listRowBackground(Color.white.opacity(0.04))
-
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: 10) {
-                            ForEach(colors, id: \.self) { color in
-                                Circle()
-                                    .fill(Color.color(named: color))
-                                    .frame(width: 28, height: 28)
-                                    .overlay(
-                                        Circle()
-                                            .stroke(Color.white, lineWidth: selectedColor == color ? 2 : 0)
-                                    )
-                                    .onTapGesture { selectedColor = color }
-                            }
-                        }
-                        .padding(.vertical, 4)
-                    }
-                    .listRowBackground(Color.white.opacity(0.04))
-                } header: {
-                    Text("Routine Info").foregroundColor(Color.white.opacity(0.3))
-                }
-
-                Section {
-                    ForEach(filtered) { exercise in
-                        HStack {
-                            Image(systemName: selectedExercises.contains(exercise.id) ? "checkmark.circle.fill" : "circle")
-                                .foregroundColor(selectedExercises.contains(exercise.id) ? GymOSColors.primaryPurple : Color.white.opacity(0.3))
-                            VStack(alignment: .leading, spacing: 3) {
-                                Text(exercise.name)
-                                    .font(.system(size: 15))
-                                    .foregroundColor(.white)
-                                Text(exercise.category.rawValue)
-                                    .font(.system(size: 12))
-                                    .foregroundColor(Color.white.opacity(0.35))
-                            }
-                        }
-                        .contentShape(Rectangle())
-                        .onTapGesture {
-                            if selectedExercises.contains(exercise.id) {
-                                selectedExercises.remove(exercise.id)
-                            } else {
-                                selectedExercises.insert(exercise.id)
-                            }
-                        }
-                        .listRowBackground(Color.white.opacity(0.04))
-                    }
-                } header: {
-                    Text("Exercises").foregroundColor(Color.white.opacity(0.3))
-                }
-            }
-            .listStyle(.insetGrouped)
-            .scrollContentBackground(.hidden)
-            .searchable(text: $searchText, prompt: "Search exercises")
-        }
-        .navigationTitle(name)
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .navigationBarTrailing) {
-                Button("Save") {
-                    let exercises = workoutManager.availableExercises.filter { selectedExercises.contains($0.id) }
-                    workoutManager.updateWorkoutDay(day, name: name, exercises: exercises, color: selectedColor)
-                    dismiss()
-                }
-                .fontWeight(.semibold)
-                .foregroundColor(GymOSColors.primaryPurple)
+        
+        var filtered: [Exercise] {
+            if searchText.isEmpty { return workoutManager.availableExercises }
+            return workoutManager.availableExercises.filter {
+                $0.name.localizedCaseInsensitiveContains(searchText)
             }
         }
-    }
-}
-
-// MARK: - History View
-struct HistoryView: View {
-    @EnvironmentObject var workoutManager: WorkoutManager
-    @Environment(\.dismiss) var dismiss
-
-    var body: some View {
-        NavigationView {
+        
+        var body: some View {
             ZStack {
                 Color(red: 0.05, green: 0.05, blue: 0.07).ignoresSafeArea()
-
+                
                 List {
-                    ForEach(workoutManager.workouts) { workout in
-                        NavigationLink(destination: WorkoutDetailView(workout: workout)) {
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text(workout.name)
-                                    .font(.system(size: 15, weight: .medium))
-                                    .foregroundColor(.white)
-                                HStack(spacing: 8) {
-                                    Text(formattedDate(workout.date))
-                                        .font(.system(size: 12))
-                                        .foregroundColor(Color.white.opacity(0.35))
-                                    Text("·")
-                                        .foregroundColor(Color.white.opacity(0.2))
-                                    Text("\(workout.exercises.count) exercises")
-                                        .font(.system(size: 12))
-                                        .foregroundColor(Color.white.opacity(0.35))
+                    Section {
+                        TextField("Routine name", text: $name)
+                            .foregroundColor(.white)
+                            .listRowBackground(Color.white.opacity(0.04))
+                        
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(spacing: 10) {
+                                ForEach(colors, id: \.self) { color in
+                                    Circle()
+                                        .fill(Color.color(named: color))
+                                        .frame(width: 28, height: 28)
+                                        .overlay(
+                                            Circle()
+                                                .stroke(Color.white, lineWidth: selectedColor == color ? 2 : 0)
+                                        )
+                                        .onTapGesture { selectedColor = color }
                                 }
                             }
                             .padding(.vertical, 4)
                         }
                         .listRowBackground(Color.white.opacity(0.04))
+                    } header: {
+                        Text("Routine Info").foregroundColor(Color.white.opacity(0.3))
                     }
-                }
-                .listStyle(.plain)
-                .scrollContentBackground(.hidden)
-            }
-            .navigationTitle("History")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Done") { dismiss() }
-                        .foregroundColor(GymOSColors.primaryPurple)
-                }
-            }
-        }
-    }
-
-    private func formattedDate(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "EEE, MMM d"
-        return formatter.string(from: date)
-    }
-}
-
-// MARK: - Workout Detail View
-struct WorkoutDetailView: View {
-    let workout: Workout
-
-    var body: some View {
-        ZStack {
-            Color(red: 0.05, green: 0.05, blue: 0.07).ignoresSafeArea()
-
-            List {
-                ForEach(workout.exercises) { session in
+                    
                     Section {
-                        ForEach(Array(session.sets.enumerated()), id: \.element.id) { index, set in
-                            if set.isCompleted {
-                                HStack {
-                                    Text("Set \(index + 1)")
-                                        .font(.system(size: 13))
-                                        .foregroundColor(Color.white.opacity(0.4))
-                                    Spacer()
-                                    Text("\(set.weight.clean)kg × \(set.reps)")
-                                        .font(.system(size: 14, weight: .medium))
-                                        .foregroundColor(.white)
+                        ForEach(Exercise.ExerciseCategory.allCases, id: \.self) { category in
+                            let categoryExercises = filtered.filter { $0.category == category }
+                            if !categoryExercises.isEmpty {
+                                DisclosureGroup {
+                                    ForEach(categoryExercises) { exercise in
+                                        HStack {
+                                            Image(systemName: selectedExercises.contains(exercise.id) ? "checkmark.circle.fill" : "circle")
+                                                .foregroundColor(selectedExercises.contains(exercise.id) ? GymOSColors.primaryPurple : Color.white.opacity(0.3))
+                                            VStack(alignment: .leading, spacing: 3) {
+                                                Text(exercise.name)
+                                                    .font(.system(size: 15))
+                                                    .foregroundColor(.white)
+                                                Text(exercise.muscleGroups.joined(separator: ", "))
+                                                    .font(.system(size: 12))
+                                                    .foregroundColor(Color.white.opacity(0.35))
+                                            }
+                                        }
+                                        .contentShape(Rectangle())
+                                        .onTapGesture {
+                                            if selectedExercises.contains(exercise.id) {
+                                                selectedExercises.remove(exercise.id)
+                                            } else {
+                                                selectedExercises.insert(exercise.id)
+                                            }
+                                        }
+                                        .listRowBackground(Color.white.opacity(0.04))
+                                    }
+                                } label: {
+                                    HStack {
+                                        Text(category.rawValue)
+                                            .font(.system(size: 14, weight: .medium))
+                                            .foregroundColor(.white)
+                                        Spacer()
+                                        let selectedCount = categoryExercises.filter { selectedExercises.contains($0.id) }.count
+                                        if selectedCount > 0 {
+                                            Text("\(selectedCount)")
+                                                .font(.system(size: 12, weight: .semibold))
+                                                .foregroundColor(GymOSColors.primaryPurple)
+                                        }
+                                    }
                                 }
                                 .listRowBackground(Color.white.opacity(0.04))
                             }
                         }
                     } header: {
-                        Text(session.exercise.name)
-                            .foregroundColor(GymOSColors.primaryPurple)
+                        Text("Exercises")
+                            .foregroundColor(Color.white.opacity(0.3))
+                    }
+                }
+                .listStyle(.insetGrouped)  .scrollContentBackground(.hidden)
+                    .searchable(text: $searchText, prompt: "Search exercises")
+                }
+                .navigationTitle(name)
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .navigationBarTrailing) {
+                        Button("Save") {
+                            let exercises = workoutManager.availableExercises.filter { selectedExercises.contains($0.id) }
+                            workoutManager.updateWorkoutDay(day, name: name, exercises: exercises, color: selectedColor)
+                            dismiss()
+                        }
+                        .fontWeight(.semibold)
+                        .foregroundColor(GymOSColors.primaryPurple)
                     }
                 }
             }
-            .listStyle(.insetGrouped)
-            .scrollContentBackground(.hidden)
         }
-        .navigationTitle(workout.name)
-        .navigationBarTitleDisplayMode(.inline)
-    }
-}
-
-#Preview {
-    YouView()
-        .environmentObject(WorkoutManager())
-}
+        
+        // MARK: - History View
+        struct HistoryView: View {
+            @EnvironmentObject var workoutManager: WorkoutManager
+            @Environment(\.dismiss) var dismiss
+            
+            var body: some View {
+                NavigationView {
+                    ZStack {
+                        Color(red: 0.05, green: 0.05, blue: 0.07).ignoresSafeArea()
+                        
+                        List {
+                            ForEach(workoutManager.workouts) { workout in
+                                NavigationLink(destination: WorkoutDetailView(workout: workout)) {
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        Text(workout.name)
+                                            .font(.system(size: 15, weight: .medium))
+                                            .foregroundColor(.white)
+                                        HStack(spacing: 8) {
+                                            Text(formattedDate(workout.date))
+                                                .font(.system(size: 12))
+                                                .foregroundColor(Color.white.opacity(0.35))
+                                            Text("·")
+                                                .foregroundColor(Color.white.opacity(0.2))
+                                            Text("\(workout.exercises.count) exercises")
+                                                .font(.system(size: 12))
+                                                .foregroundColor(Color.white.opacity(0.35))
+                                        }
+                                    }
+                                    .padding(.vertical, 4)
+                                }
+                                .listRowBackground(Color.white.opacity(0.04))
+                            }
+                        }
+                        .listStyle(.plain)
+                        .scrollContentBackground(.hidden)
+                    }
+                    .navigationTitle("History")
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbar {
+                        ToolbarItem(placement: .navigationBarLeading) {
+                            Button("Done") { dismiss() }
+                                .foregroundColor(GymOSColors.primaryPurple)
+                        }
+                    }
+                }
+            }
+            
+            private func formattedDate(_ date: Date) -> String {
+                let formatter = DateFormatter()
+                formatter.dateFormat = "EEE, MMM d"
+                return formatter.string(from: date)
+            }
+        }
+        
+        // MARK: - Workout Detail View
+        struct WorkoutDetailView: View {
+            let workout: Workout
+            
+            var body: some View {
+                ZStack {
+                    Color(red: 0.05, green: 0.05, blue: 0.07).ignoresSafeArea()
+                    
+                    List {
+                        ForEach(workout.exercises) { session in
+                            Section {
+                                ForEach(Array(session.sets.enumerated()), id: \.element.id) { index, set in
+                                    if set.isCompleted {
+                                        HStack {
+                                            Text("Set \(index + 1)")
+                                                .font(.system(size: 13))
+                                                .foregroundColor(Color.white.opacity(0.4))
+                                            Spacer()
+                                            Text("\(set.weight.clean)kg × \(set.reps)")
+                                                .font(.system(size: 14, weight: .medium))
+                                                .foregroundColor(.white)
+                                        }
+                                        .listRowBackground(Color.white.opacity(0.04))
+                                    }
+                                }
+                            } header: {
+                                Text(session.exercise.name)
+                                    .foregroundColor(GymOSColors.primaryPurple)
+                            }
+                        }
+                    }
+                    .listStyle(.insetGrouped)
+                    .scrollContentBackground(.hidden)
+                }
+                .navigationTitle(workout.name)
+                .navigationBarTitleDisplayMode(.inline)
+            }
+        }
+        
+        #Preview {
+            YouView()
+                .environmentObject(WorkoutManager())
+        }
