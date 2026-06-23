@@ -896,6 +896,13 @@ struct WorkoutDetailView: View {
                                     Text("\(set.weight.clean)kg × \(set.reps)")
                                         .font(.system(size: 14, weight: .medium))
                                         .foregroundColor(.white)
+                                    Text(set.mode.rawValue)
+                                        .font(.system(size: 11, weight: .medium))
+                                        .foregroundColor(set.mode == .strength ? GymOSColors.primaryPurple : .orange)
+                                        .padding(.horizontal, 7)
+                                        .padding(.vertical, 3)
+                                        .background(set.mode == .strength ? GymOSColors.primaryPurple.opacity(0.12) : Color.orange.opacity(0.12))
+                                        .cornerRadius(6)
                                 }
                                 .listRowBackground(Color.white.opacity(0.04))
                             }
@@ -907,8 +914,14 @@ struct WorkoutDetailView: View {
                                 .listRowBackground(Color.white.opacity(0.04))
                         }
                     } header: {
-                        Text(session.exercise.name)
-                            .foregroundColor(GymOSColors.primaryPurple)
+                        HStack {
+                            Text(session.exercise.name)
+                                .foregroundColor(GymOSColors.primaryPurple)
+                            if !session.variation.isEmpty {
+                                Text("· \(session.variation)")
+                                    .foregroundColor(GymOSColors.primaryPurple.opacity(0.5))
+                            }
+                        }
                     }
                 }
             }
