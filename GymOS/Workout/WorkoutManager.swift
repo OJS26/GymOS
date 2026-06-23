@@ -95,56 +95,90 @@ class WorkoutManager: ObservableObject {
     
     // MARK: - Sample Data Loading
     private func loadSampleExercises() {
+        guard availableExercises.isEmpty else { return }
+        
         availableExercises = [
-            Exercise(name: "Bench Press", category: .chest, muscleGroups: ["Chest", "Triceps", "Shoulders"]),
-            Exercise(name: "Squat", category: .legs, muscleGroups: ["Quadriceps", "Glutes", "Hamstrings"]),
-            Exercise(name: "Deadlift", category: .back, muscleGroups: ["Back", "Hamstrings", "Glutes"]),
-            Exercise(name: "Pull-ups", category: .back, muscleGroups: ["Lats", "Biceps", "Rhomboids"]),
-            Exercise(name: "Overhead Press", category: .shoulders, muscleGroups: ["Shoulders", "Triceps", "Core"]),
-            Exercise(name: "Barbell Row", category: .back, muscleGroups: ["Lats", "Rhomboids", "Biceps"]),
-            Exercise(name: "Dips", category: .chest, muscleGroups: ["Chest", "Triceps", "Shoulders"]),
-            Exercise(name: "Lunges", category: .legs, muscleGroups: ["Quadriceps", "Glutes", "Hamstrings"]),
-            Exercise(name: "Incline Bench Press", category: .chest, muscleGroups: ["Upper Chest", "Triceps", "Shoulders"]),
-            Exercise(name: "Romanian Deadlift", category: .legs, muscleGroups: ["Hamstrings", "Glutes", "Lower Back"]),
-            Exercise(name: "Lat Pulldown", category: .back, muscleGroups: ["Lats", "Biceps", "Rhomboids"]),
-            Exercise(name: "Leg Press", category: .legs, muscleGroups: ["Quadriceps", "Glutes"]),
-            Exercise(name: "Tricep Dips", category: .arms, muscleGroups: ["Triceps", "Chest"]),
-            Exercise(name: "Bicep Curls", category: .arms, muscleGroups: ["Biceps"]),
-            Exercise(name: "Leg Curls", category: .legs, muscleGroups: ["Hamstrings"]),
-            Exercise(name: "Calf Raises", category: .legs, muscleGroups: ["Calves"])
+            // CHEST
+            Exercise(name: "Chest Press", category: .chest, muscleGroups: ["Upper Chest", "Mid Chest", "Front Delt", "Tricep"]),
+            Exercise(name: "Pec Fly", category: .chest, muscleGroups: ["Mid Chest", "Lower Chest"]),
+            Exercise(name: "Cable Fly", category: .chest, muscleGroups: ["Upper Chest", "Mid Chest", "Lower Chest"]),
+            Exercise(name: "Converging Chest Press", category: .chest, muscleGroups: ["Upper Chest", "Mid Chest", "Front Delt", "Tricep"]),
+            
+            // BICEPS
+            Exercise(name: "Preacher Curl", category: .arms, muscleGroups: ["Bicep"]),
+            Exercise(name: "Hammer Curl", category: .arms, muscleGroups: ["Bicep", "Forearm"]),
+            Exercise(name: "Bayesian Curl", category: .arms, muscleGroups: ["Bicep"]),
+            Exercise(name: "Triple 7", category: .arms, muscleGroups: ["Bicep"], isFixedReps: true),
+            Exercise(name: "Bicep Curl", category: .arms, muscleGroups: ["Bicep"]),
+            
+            // FOREARMS
+            Exercise(name: "Forearm Curl Palm Down", category: .arms, muscleGroups: ["Forearm"]),
+            Exercise(name: "Forearm Curl Palm Up", category: .arms, muscleGroups: ["Forearm"]),
+            
+            // CORE
+            Exercise(name: "Ab Crunch Machine", category: .core, muscleGroups: ["Abs"]),
+            Exercise(name: "Rope Cable Crunches", category: .core, muscleGroups: ["Abs"]),
+            Exercise(name: "Leg Raises", category: .core, muscleGroups: ["Abs", "Hip Flexors"]),
+            
+            // BACK
+            Exercise(name: "Cable Row", category: .back, muscleGroups: ["Lats", "Mid Back", "Upper Back"]),
+            Exercise(name: "Single Arm Cable Row", category: .back, muscleGroups: ["Lats", "Mid Back"]),
+            Exercise(name: "Lat Pulldown", category: .back, muscleGroups: ["Lats", "Mid Back", "Upper Back", "Bicep"]),
+            Exercise(name: "Single Arm Lat Pulldown", category: .back, muscleGroups: ["Lats", "Mid Back", "Bicep"]),
+            Exercise(name: "Lat Pullover", category: .back, muscleGroups: ["Lats"]),
+            Exercise(name: "Kelso Shrug", category: .back, muscleGroups: ["Upper Back", "Mid Back"]),
+            Exercise(name: "Dumbbell Row", category: .back, muscleGroups: ["Lats", "Mid Back", "Bicep"]),
+            
+            // TRICEPS
+            Exercise(name: "Single Arm Cable Pushdown", category: .arms, muscleGroups: ["Tricep"]),
+            Exercise(name: "Tricep Cable Pushdown", category: .arms, muscleGroups: ["Tricep"]),
+            Exercise(name: "Overhead Tricep Extension", category: .arms, muscleGroups: ["Tricep"]),
+            Exercise(name: "Tricep Dip Machine", category: .arms, muscleGroups: ["Tricep", "Lower Chest", "Front Delt"]),
+            Exercise(name: "Tricep Extension Machine", category: .arms, muscleGroups: ["Tricep"]),
+            
+            // SHOULDERS
+            Exercise(name: "Cable Lateral Raise", category: .shoulders, muscleGroups: ["Side Delt"]),
+            Exercise(name: "Machine Lateral Raise", category: .shoulders, muscleGroups: ["Side Delt"]),
+            Exercise(name: "Face Pulls", category: .shoulders, muscleGroups: ["Rear Delt", "Upper Back"]),
+            Exercise(name: "Reverse Fly", category: .shoulders, muscleGroups: ["Rear Delt", "Upper Back"]),
+            Exercise(name: "Cable Archer", category: .shoulders, muscleGroups: ["Rear Delt"]),
+            
+            // LEGS - GLUTES
+            Exercise(name: "Glute Extension", category: .legs, muscleGroups: ["Glutes", "Lower Back"]),
+            
+            // LEGS - QUADS
+            Exercise(name: "Quad Extension Machine", category: .legs, muscleGroups: ["Quads"]),
+            Exercise(name: "Split Squat", category: .legs, muscleGroups: ["Quads", "Glutes", "Hip Flexors"]),
+            Exercise(name: "Hack Squat", category: .legs, muscleGroups: ["Quads", "Glutes"]),
+            Exercise(name: "Leg Press", category: .legs, muscleGroups: ["Quads", "Glutes", "Hamstrings"]),
+            
+            // LEGS - HAMSTRINGS
+            Exercise(name: "RDL", category: .legs, muscleGroups: ["Hamstrings", "Glutes", "Lower Back"]),
+            Exercise(name: "Hamstring Curl Machine", category: .legs, muscleGroups: ["Hamstrings"]),
+            Exercise(name: "Goblet Squat", category: .legs, muscleGroups: ["Quads", "Glutes", "Hamstrings"]),
+            Exercise(name: "Leg Press High Foot", category: .legs, muscleGroups: ["Hamstrings", "Glutes"]),
+            
+            // LEGS - HIPS
+            Exercise(name: "Abductor Machine", category: .legs, muscleGroups: ["Hip Flexors"]),
+            Exercise(name: "Adductor Machine", category: .legs, muscleGroups: ["Hip Flexors"]),
+            
+            // LEGS - CALVES
+            Exercise(name: "Calf Raise Machine", category: .legs, muscleGroups: ["Calves"]),
         ]
     }
     
     private func loadSampleWorkoutDays() {
-        let upperExercises = availableExercises.filter {
-            $0.category == .chest || $0.category == .back || $0.category == .shoulders || $0.category == .arms
-        }
-        let lowerExercises = availableExercises.filter {
-            $0.category == .legs
-        }
-        
-        workoutDays = [
-            WorkoutDay(name: "Upper Body", exercises: Array(upperExercises.prefix(6)), color: "blue"),
-            WorkoutDay(name: "Lower Body", exercises: Array(lowerExercises.prefix(6)), color: "green"),
-            WorkoutDay(name: "Push", exercises: [
-                availableExercises.first { $0.name == "Bench Press" }!,
-                availableExercises.first { $0.name == "Overhead Press" }!,
-                availableExercises.first { $0.name == "Dips" }!,
-                availableExercises.first { $0.name == "Tricep Dips" }!
-            ], color: "orange"),
-            WorkoutDay(name: "Pull", exercises: [
-                availableExercises.first { $0.name == "Deadlift" }!,
-                availableExercises.first { $0.name == "Pull-ups" }!,
-                availableExercises.first { $0.name == "Barbell Row" }!,
-                availableExercises.first { $0.name == "Bicep Curls" }!
-            ], color: "purple")
-        ]
+        guard workoutDays.isEmpty else { return }
     }
     
     // MARK: - Exercise Management
     func addCustomExercise(name: String, category: Exercise.ExerciseCategory, muscleGroups: [String]) {
         let exercise = Exercise(name: name, category: category, muscleGroups: muscleGroups, isCustom: true)
         availableExercises.append(exercise)
+        saveData()
+    }
+    
+    func persistExercises() {
         saveData()
     }
     
@@ -260,10 +294,18 @@ class WorkoutManager: ObservableObject {
     }
     
     // MARK: - Data Analysis
-    func getExerciseHistory(for exercise: Exercise) -> [ExerciseSession] {
+    func getExerciseHistory(for exercise: Exercise, variation: String = "") -> [ExerciseSession] {
         return workouts.flatMap { workout in
-            workout.exercises.filter { $0.exercise.name == exercise.name }
-        }.sorted { $0.id.uuidString < $1.id.uuidString }
+            workout.exercises.filter {
+                $0.exercise.name == exercise.name &&
+                (variation.isEmpty || $0.variation == variation)
+            }
+        }
+        .sorted { a, b in
+            let aDate = workouts.first { $0.exercises.contains { $0.id == a.id } }?.date ?? Date.distantPast
+            let bDate = workouts.first { $0.exercises.contains { $0.id == b.id } }?.date ?? Date.distantPast
+            return aDate < bDate
+        }
     }
     
     func getBestSet(for exercise: Exercise) -> WorkoutSet? {
@@ -312,17 +354,20 @@ class WorkoutManager: ObservableObject {
         return groupedWorkouts
     }
     
-    func weightSuggestion(for exercise: Exercise) -> String? {
-        let history = getExerciseHistory(for: exercise)
+    func weightSuggestion(for exercise: Exercise, variation: String) -> String? {
+        guard !exercise.isFixedReps else { return nil }
+        
+        // Get history filtered to this specific exercise AND variation
+        let history = getExerciseHistory(for: exercise, variation: variation)
         guard let lastSession = history.last else { return nil }
         
-        let completedSets = lastSession.sets.filter { $0.isCompleted }
-        guard !completedSets.isEmpty else { return nil }
+        // Only look at strength sets for progression
+        let strengthSets = lastSession.sets.filter { $0.isCompleted && $0.mode == .strength }
+        guard !strengthSets.isEmpty else { return nil }
         
-        let avgWeight = completedSets.map { $0.weight }.reduce(0, +) / Double(completedSets.count)
-        let avgReps = completedSets.map { $0.reps }.reduce(0, +) / completedSets.count
+        let avgWeight = strengthSets.map { $0.weight }.reduce(0, +) / Double(strengthSets.count)
+        let avgReps = strengthSets.map { $0.reps }.reduce(0, +) / strengthSets.count
         
-        // If they got 10+ reps on average, suggest a weight increase
         let suggested = avgReps >= 10 ? avgWeight + 2.5 : avgWeight
         return "\(suggested.clean)kg"
     }
@@ -408,6 +453,7 @@ class WorkoutManager: ObservableObject {
     
     private func loadData() {
         // Load workouts
+        
         if let data = UserDefaults.standard.data(forKey: "workouts"),
            let decoded = try? JSONDecoder().decode([Workout].self, from: data) {
             workouts = decoded
@@ -426,5 +472,15 @@ class WorkoutManager: ObservableObject {
         }
         
         print("Data loaded from UserDefaults")
-    }
-}
+            }
+            
+            func previousVariations(for exercise: Exercise) -> [String] {
+                let history = getExerciseHistory(for: exercise)
+                let variations = history.compactMap { session -> String? in
+                    session.variation.isEmpty ? nil : session.variation
+                }
+                // Return unique variations preserving order
+                var seen = Set<String>()
+                return variations.filter { seen.insert($0).inserted }
+            }
+        }

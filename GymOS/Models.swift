@@ -1,6 +1,12 @@
 import SwiftUI
 import Foundation
 
+// MARK: - Set Mode
+enum SetMode: String, Codable, CaseIterable {
+    case strength = "Strength"
+    case pump = "Pump"
+}
+
 // MARK: - Rest Timer Settings
 struct RestTimerSettings: Codable {
     var isEnabled: Bool = true
@@ -21,16 +27,18 @@ struct Exercise: Identifiable, Codable {
     let name: String
     let category: ExerciseCategory
     let muscleGroups: [String]
-    let isCustom: Bool // Track if user created this exercise
-    var note: String = "" // Persistent note - shows every time (e.g. form cues)
+    let isCustom: Bool
+    var note: String = ""
+    var isFixedReps: Bool = false
     
-    init(name: String, category: ExerciseCategory, muscleGroups: [String], isCustom: Bool = false, note: String = "") {
+    init(name: String, category: ExerciseCategory, muscleGroups: [String], isCustom: Bool = false, note: String = "", isFixedReps: Bool = false) {
         self.id = UUID()
         self.name = name
         self.category = category
         self.muscleGroups = muscleGroups
         self.isCustom = isCustom
         self.note = note
+        self.isFixedReps = isFixedReps
     }
     
     enum ExerciseCategory: String, CaseIterable, Codable {
@@ -70,13 +78,15 @@ struct WorkoutSet: Identifiable, Codable {
     var weight: Double
     var isCompleted: Bool = false
     var restTime: TimeInterval?
+    var mode: SetMode = .strength
     
-    init(reps: Int, weight: Double, isCompleted: Bool = false, restTime: TimeInterval? = nil) {
+    init(reps: Int, weight: Double, isCompleted: Bool = false, restTime: TimeInterval? = nil, mode: SetMode = .strength) {
         self.id = UUID()
         self.reps = reps
         self.weight = weight
         self.isCompleted = isCompleted
         self.restTime = restTime
+        self.mode = mode
     }
 }
 
@@ -86,12 +96,14 @@ struct ExerciseSession: Identifiable, Codable {
     let exercise: Exercise
     var sets: [WorkoutSet]
     var notes: String = ""
+    var variation: String = ""
     
-    init(exercise: Exercise, sets: [WorkoutSet], notes: String = "") {
+    init(exercise: Exercise, sets: [WorkoutSet], notes: String = "", variation: String = "") {
         self.id = UUID()
         self.exercise = exercise
         self.sets = sets
         self.notes = notes
+        self.variation = variation
     }
 }
 
