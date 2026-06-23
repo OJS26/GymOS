@@ -429,16 +429,17 @@ struct EditExerciseNoteSheet: View {
     @Environment(\.dismiss) var dismiss
     let exercise: Exercise
     @State private var noteText: String = ""
-
+    @FocusState private var isFocused: Bool
+    
     var body: some View {
         ZStack {
             Color(red: 0.08, green: 0.08, blue: 0.10).ignoresSafeArea()
-
+            
             VStack(alignment: .leading, spacing: 20) {
                 Text(exercise.name)
                     .font(.system(size: 20, weight: .semibold))
                     .foregroundColor(.white)
-
+                
                 VStack(alignment: .leading, spacing: 8) {
                     Text("NOTE")
                         .font(.system(size: 10, weight: .medium))
@@ -447,7 +448,7 @@ struct EditExerciseNoteSheet: View {
                     Text("Shows every time you do this exercise — good for form cues or reminders.")
                         .font(.system(size: 12))
                         .foregroundColor(Color.white.opacity(0.3))
-
+                    
                     TextEditor(text: $noteText)
                         .font(.system(size: 15))
                         .foregroundColor(.white)
@@ -456,8 +457,9 @@ struct EditExerciseNoteSheet: View {
                         .padding(10)
                         .background(Color.white.opacity(0.06))
                         .cornerRadius(10)
+                        .focused($isFocused)
                 }
-
+                
                 Button {
                     workoutManager.updateExerciseNote(exercise, note: noteText)
                     dismiss()
@@ -474,11 +476,15 @@ struct EditExerciseNoteSheet: View {
             .padding(24)
         }
         .onAppear {
-                    noteText = exercise.note
-                }
+            noteText = exercise.note
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                isFocused = true
             }
         }
-
+        
+        .ignoresSafeArea(.keyboard)
+    }
+}
         // MARK: - Routines View
 struct RoutinesView: View {
     @EnvironmentObject var workoutManager: WorkoutManager

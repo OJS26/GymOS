@@ -806,11 +806,13 @@ struct CreateExerciseInWorkoutSheet: View {
 }
 
 // MARK: - Session Note Sheet
+// MARK: - Session Note Sheet
 struct SessionNoteSheet: View {
     @EnvironmentObject var workoutManager: WorkoutManager
     @Environment(\.dismiss) var dismiss
     let exerciseIndex: Int
     @State private var noteText: String = ""
+    @FocusState private var isFocused: Bool
 
     var body: some View {
         ZStack {
@@ -831,10 +833,11 @@ struct SessionNoteSheet: View {
                         .font(.system(size: 15))
                         .foregroundColor(.white)
                         .scrollContentBackground(.hidden)
-                        .frame(height: 100)
+                        .frame(height: 120)
                         .padding(10)
                         .background(Color.white.opacity(0.06))
                         .cornerRadius(10)
+                        .focused($isFocused)
                 }
 
                 Button {
@@ -849,11 +852,17 @@ struct SessionNoteSheet: View {
                         .background(GymOSColors.primaryPurple)
                         .cornerRadius(14)
                 }
+
+                Spacer()
             }
             .padding(24)
         }
+        .ignoresSafeArea(.keyboard)
         .onAppear {
             noteText = workoutManager.currentWorkout?.exercises[exerciseIndex].notes ?? ""
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                isFocused = true
+            }
         }
     }
 }
