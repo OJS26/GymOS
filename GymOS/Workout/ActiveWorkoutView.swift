@@ -24,25 +24,28 @@ struct ActiveWorkoutView: View {
 
                 // Nav bar
                 HStack {
-                    Button("Cancel") {
-                        showingEndConfirm = true
-                    }
-                    .font(.system(size: 15))
-                    .foregroundColor(Color.white.opacity(0.4))
-
-                    Spacer()
-
                     Text(workoutManager.currentWorkout?.name ?? "Workout")
                         .font(.system(size: 16, weight: .semibold))
                         .foregroundColor(.white)
 
                     Spacer()
 
-                    Button("Finish") {
+                    Button {
                         showingReflection = true
+                    } label: {
+                        Text("Finish")
+                            .font(.system(size: 15, weight: .semibold))
+                            .foregroundColor(.white)
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 8)
+                            .background(GymOSColors.primaryPurple)
+                            .cornerRadius(10)
                     }
-                    .font(.system(size: 15, weight: .semibold))
-                    .foregroundColor(GymOSColors.primaryPurple)
+                    .simultaneousGesture(
+                        LongPressGesture(minimumDuration: 1.0).onEnded { _ in
+                            showingEndConfirm = true
+                        }
+                    )
                 }
                 .padding(.horizontal, 20)
                 .padding(.vertical, 16)

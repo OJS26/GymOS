@@ -251,32 +251,8 @@ struct ExerciseLibraryView: View {
 
                     List {
                         ForEach(filtered) { exercise in
-                            Button {
+                            ExerciseLibraryRow(exercise: exercise) {
                                 editingExercise = exercise
-                            } label: {
-                                VStack(alignment: .leading, spacing: 4) {
-                                    Text(exercise.name)
-                                        .font(.system(size: 15, weight: .medium))
-                                        .foregroundColor(.white)
-                                    HStack(spacing: 6) {
-                                        Text(exercise.category.rawValue)
-                                            .font(.system(size: 11))
-                                            .foregroundColor(GymOSColors.primaryPurple)
-                                        Text("·")
-                                            .foregroundColor(Color.white.opacity(0.2))
-                                        Text(exercise.muscleGroups.joined(separator: ", "))
-                                            .font(.system(size: 11))
-                                            .foregroundColor(Color.white.opacity(0.35))
-                                    }
-                                    if !exercise.note.isEmpty {
-                                        Text(exercise.note)
-                                            .font(.system(size: 11))
-                                            .italic()
-                                            .foregroundColor(GymOSColors.primaryPurple.opacity(0.7))
-                                            .lineLimit(1)
-                                    }
-                                }
-                                .padding(.vertical, 4)
                             }
                             .listRowBackground(Color.white.opacity(0.04))
                             .swipeActions(edge: .trailing) {
@@ -483,6 +459,226 @@ struct EditExerciseNoteSheet: View {
         }
         
         .ignoresSafeArea(.keyboard)
+    }
+}
+
+// MARK: - Exercise Library Row
+struct ExerciseLibraryRow: View {
+    @EnvironmentObject var workoutManager: WorkoutManager
+    let exercise: Exercise
+    let onLongPress: () -> Void
+    @State private var isExpanded = false
+
+    private var variations: [String] {
+        workoutManager.previousVariations(for: exercise)
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            HStack(spacing: 12) {
+                NavigationLink(destination: ExerciseProgressionView(exercise: exercise)
+                    .environmentObject(workoutManager)) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(exercise.name)
+                            .font(.system(size: 15, weight: .medium))
+                            .foregroundColor(.white)
+                        HStack(spacing: 6) {
+                            Text(exercise.category.rawValue)
+                                .font(.system(size: 11))
+                                .foregroundColor(GymOSColors.primaryPurple)
+                            Text("·")
+                                .foregroundColor(Color.white.opacity(0.2))
+                            Text(exercise.muscleGroups.joined(separator: ", "))
+                                .font(.system(size: 11))
+                                .foregroundColor(Color.white.opacity(0.35))
+                        }
+                        if !exercise.note.isEmpty {
+                            Text(exercise.note)
+                                .font(.system(size: 11))
+                                .italic()
+                                .foregroundColor(GymOSColors.primaryPurple.opacity(0.7))
+                                .lineLimit(1)
+                        }
+                    }
+                }
+                .simultaneousGesture(
+                    LongPressGesture(minimumDuration: 0.5).onEnded { _ in
+                        onLongPress()
+                    }
+                )
+
+                Spacer()
+
+                if !variations.isEmpty {
+                    Button {
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            isExpanded.toggle()
+                        }
+                    } label: {
+                        Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
+                            .font(.system(size: 12, weight: .medium))
+                            .foregroundColor(Color.white.opacity(0.3))
+                            .padding(8)
+                    }
+                }
+            }
+            .padding(.vertical, 8)
+
+            if isExpanded {
+                VStack(spacing: 0) {
+                    ForEach(variations, id: \.self) { variation in
+                        NavigationLink(destination: ExerciseProgressionView(exercise: exercise, variation: variation)
+                            .environmentObject(workoutManager)) {
+                            HStack {
+                                Image(systemName: "arrow.turn.down.right")
+                                    .font(.system(size: 11))
+                                    .foregroundColor(Color.white.opacity(0.2))
+                                Text(variation)
+                                    .font(.system(size: 13))
+                                    .foregroundColor(Color.white.opacity(0.6))
+                                Spacer()
+                            }
+                            .padding(.vertical, 8)
+                            .padding(.leading, 16)
+                        }
+
+                        if variation != variations.last {
+                            Divider()
+                                .background(Color.white.opacity(0.04))
+                                .padding(.leading, 16)
+                        }
+                    }
+                }
+                .background(Color.white.opacity(0.03))
+                .cornerRadius(8)
+            }
+        }
+    }
+}
+
+// MARK: - Exercise Progression View
+struct ExerciseProgressionView: View {
+    @EnvironmentObject var workoutManager: WorkoutManager
+    let exercise: Exercise
+    var variation: String = ""
+
+    private var history: [ExerciseSession] {
+        workoutManager.getExerciseHistory(for: exercise, variation: variation)
+    }
+
+    private var bestSet: WorkoutSet? {
+        history.flatMap { $0.sets }
+            .filter { $0.isCompleted && $0.mode == .strength }
+            .max { ($0.weight * Double($0.reps)) < ($1.weight * Double($1.reps)) }
+    }
+
+    private var recentSessions: [(date: Date, session: ExerciseSession)] {
+        workoutManager.workouts.compactMap { workout in
+            if let session = workout.exercises.first(where: {
+                $0.exercise.name == exercise.name &&
+                (variation.isEmpty || $0.variation == variation)
+            }) {
+                return (date: workout.date, session: session)
+            }
+            return nil
+        }
+        .sorted { $0.date > $1.date }
+        .prefix(10)
+        .map { $0 }
+    }
+
+    var body: some View {
+        ZStack {
+            Color(red: 0.05, green: 0.05, blue: 0.07).ignoresSafeArea()
+
+            List {
+                // Best set
+                if let best = bestSet {
+                    Section {
+                        HStack {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("Best set")
+                                    .font(.system(size: 13))
+                                    .foregroundColor(Color.white.opacity(0.4))
+                                Text("\(best.weight.clean)kg × \(best.reps) reps")
+                                    .font(.system(size: 22, weight: .bold, design: .rounded))
+                                    .foregroundColor(.white)
+                            }
+                            Spacer()
+                            Image(systemName: "trophy.fill")
+                                .font(.system(size: 24))
+                                .foregroundColor(.orange)
+                        }
+                        .padding(.vertical, 6)
+                        .listRowBackground(Color.white.opacity(0.04))
+                    }
+                }
+
+                // Recent sessions
+                if !recentSessions.isEmpty {
+                    Section {
+                        ForEach(recentSessions, id: \.session.id) { item in
+                            VStack(alignment: .leading, spacing: 8) {
+                                HStack {
+                                    Text(formattedDate(item.date))
+                                        .font(.system(size: 13, weight: .medium))
+                                        .foregroundColor(Color.white.opacity(0.4))
+                                    Spacer()
+                                    if !item.session.variation.isEmpty {
+                                        Text(item.session.variation)
+                                            .font(.system(size: 11))
+                                            .foregroundColor(GymOSColors.primaryPurple.opacity(0.7))
+                                    }
+                                }
+
+                                ForEach(Array(item.session.sets.enumerated()), id: \.element.id) { index, set in
+                                    if set.isCompleted {
+                                        HStack {
+                                            Text("Set \(index + 1)")
+                                                .font(.system(size: 12))
+                                                .foregroundColor(Color.white.opacity(0.3))
+                                            Spacer()
+                                            Text("\(set.weight.clean)kg × \(set.reps)")
+                                                .font(.system(size: 13, weight: .medium))
+                                                .foregroundColor(.white)
+                                            Text(set.mode.rawValue)
+                                                .font(.system(size: 10, weight: .medium))
+                                                .foregroundColor(set.mode == .strength ? GymOSColors.primaryPurple : .orange)
+                                                .padding(.horizontal, 6)
+                                                .padding(.vertical, 2)
+                                                .background(set.mode == .strength ? GymOSColors.primaryPurple.opacity(0.12) : Color.orange.opacity(0.12))
+                                                .cornerRadius(5)
+                                        }
+                                    }
+                                }
+                            }
+                            .padding(.vertical, 4)
+                            .listRowBackground(Color.white.opacity(0.04))
+                        }
+                    } header: {
+                        Text("Recent sessions")
+                            .foregroundColor(Color.white.opacity(0.3))
+                    }
+                } else {
+                    Section {
+                        Text("No history yet — start logging this exercise to see progression.")
+                            .font(.system(size: 14))
+                            .foregroundColor(Color.white.opacity(0.3))
+                            .listRowBackground(Color.white.opacity(0.04))
+                    }
+                }
+            }
+            .listStyle(.insetGrouped)
+            .scrollContentBackground(.hidden)
+        }
+        .navigationTitle(variation.isEmpty ? exercise.name : "\(exercise.name) · \(variation)")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+
+    private func formattedDate(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "EEE, MMM d"
+        return formatter.string(from: date)
     }
 }
         // MARK: - Routines View
