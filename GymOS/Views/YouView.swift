@@ -228,7 +228,7 @@ struct ExerciseLibraryView: View {
     }
 
     var body: some View {
-        NavigationView {
+        NavigationStack {
             ZStack {
                 Color(red: 0.05, green: 0.05, blue: 0.07).ignoresSafeArea()
 
@@ -468,6 +468,8 @@ struct ExerciseLibraryRow: View {
     let exercise: Exercise
     let onLongPress: () -> Void
     @State private var isExpanded = false
+    @State private var navigateToMain = false
+    @State private var navigateToVariation: String? = nil
 
     private var variations: [String] {
         workoutManager.previousVariations(for: exercise)
@@ -476,36 +478,35 @@ struct ExerciseLibraryRow: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             HStack(spacing: 12) {
-                NavigationLink(destination: ExerciseProgressionView(exercise: exercise)
-                    .environmentObject(workoutManager)) {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(exercise.name)
-                            .font(.system(size: 15, weight: .medium))
-                            .foregroundColor(.white)
-                        HStack(spacing: 6) {
-                            Text(exercise.category.rawValue)
-                                .font(.system(size: 11))
-                                .foregroundColor(GymOSColors.primaryPurple)
-                            Text("·")
-                                .foregroundColor(Color.white.opacity(0.2))
-                            Text(exercise.muscleGroups.joined(separator: ", "))
-                                .font(.system(size: 11))
-                                .foregroundColor(Color.white.opacity(0.35))
-                        }
-                        if !exercise.note.isEmpty {
-                            Text(exercise.note)
-                                .font(.system(size: 11))
-                                .italic()
-                                .foregroundColor(GymOSColors.primaryPurple.opacity(0.7))
-                                .lineLimit(1)
-                        }
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(exercise.name)
+                        .font(.system(size: 15, weight: .medium))
+                        .foregroundColor(.white)
+                    HStack(spacing: 6) {
+                        Text(exercise.category.rawValue)
+                            .font(.system(size: 11))
+                            .foregroundColor(GymOSColors.primaryPurple)
+                        Text("·")
+                            .foregroundColor(Color.white.opacity(0.2))
+                        Text(exercise.muscleGroups.joined(separator: ", "))
+                            .font(.system(size: 11))
+                            .foregroundColor(Color.white.opacity(0.35))
+                    }
+                    if !exercise.note.isEmpty {
+                        Text(exercise.note)
+                            .font(.system(size: 11))
+                            .italic()
+                            .foregroundColor(GymOSColors.primaryPurple.opacity(0.7))
+                            .lineLimit(1)
                     }
                 }
-                .simultaneousGesture(
-                    LongPressGesture(minimumDuration: 0.5).onEnded { _ in
-                        onLongPress()
-                    }
-                )
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    navigateToMain = true
+                }
+                .onLongPressGesture(minimumDuration: 0.5) {
+                    onLongPress()
+                }
 
                 Spacer()
 
@@ -520,6 +521,7 @@ struct ExerciseLibraryRow: View {
                             .foregroundColor(Color.white.opacity(0.3))
                             .padding(8)
                     }
+                    .buttonStyle(.plain)
                 }
             }
             .padding(.vertical, 8)
@@ -527,19 +529,23 @@ struct ExerciseLibraryRow: View {
             if isExpanded {
                 VStack(spacing: 0) {
                     ForEach(variations, id: \.self) { variation in
-                        NavigationLink(destination: ExerciseProgressionView(exercise: exercise, variation: variation)
-                            .environmentObject(workoutManager)) {
-                            HStack {
-                                Image(systemName: "arrow.turn.down.right")
-                                    .font(.system(size: 11))
-                                    .foregroundColor(Color.white.opacity(0.2))
-                                Text(variation)
-                                    .font(.system(size: 13))
-                                    .foregroundColor(Color.white.opacity(0.6))
-                                Spacer()
-                            }
-                            .padding(.vertical, 8)
-                            .padding(.leading, 16)
+                        HStack {
+                            Image(systemName: "arrow.turn.down.right")
+                                .font(.system(size: 11))
+                                .foregroundColor(Color.white.opacity(0.2))
+                            Text(variation)
+                                .font(.system(size: 13))
+                                .foregroundColor(Color.white.opacity(0.6))
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                                .font(.system(size: 11))
+                                .foregroundColor(Color.white.opacity(0.15))
+                        }
+                        .padding(.vertical, 8)
+                        .padding(.leading, 16)
+                        .contentShape(Rectangle())
+                        .onTapGesture {
+                            navigateToVariation = variation
                         }
 
                         if variation != variations.last {
@@ -553,9 +559,21 @@ struct ExerciseLibraryRow: View {
                 .cornerRadius(8)
             }
         }
+        .navigationDestination(isPresented: $navigateToMain) {
+            ExerciseProgressionView(exercise: exercise)
+                .environmentObject(workoutManager)
+        }
+        .navigationDestination(isPresented: Binding(
+            get: { navigateToVariation != nil },
+            set: { if !$0 { navigateToVariation = nil } }
+        )) {
+            if let variation = navigateToVariation {
+                ExerciseProgressionView(exercise: exercise, variation: variation)
+                    .environmentObject(workoutManager)
+            }
+        }
     }
 }
-
 // MARK: - Exercise Progression View
 struct ExerciseProgressionView: View {
     @EnvironmentObject var workoutManager: WorkoutManager
