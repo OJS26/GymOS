@@ -57,58 +57,63 @@ struct ActiveWorkoutView: View {
                 )
 
                 // Exercise list
-                ScrollView(showsIndicators: false) {
-                    VStack(alignment: .leading, spacing: 24) {
-                        if let workout = workoutManager.currentWorkout {
-                            ForEach(Array(workout.exercises.enumerated()), id: \.element.id) { exIndex, session in
-                                ExerciseCard(
-                                    session: session,
-                                    exerciseIndex: exIndex,
-                                    onLogSet: { setIndex in
-                                        logSheet = LogSheetData(exerciseIndex: exIndex, setIndex: setIndex, session: session)
-                                    },
-                                    onAddSet: {
-                                        workoutManager.addSet(to: exIndex)
-                                    },
-                                    onDeleteSet: { setIndex in
-                                        workoutManager.removeSet(exerciseIndex: exIndex, setIndex: setIndex)
-                                    },
-                                    onRemoveExercise: {
-                                        workoutManager.removeExercise(at: exIndex)
-                                    },
-                                    onEditNote: {
-                                        notingExerciseIndex = exIndex
-                                    }
-                                )
-                            }
-                        }
-
-                        // Add exercise button
-                        Button {
-                            showingExercisePicker = true
-                        } label: {
-                            HStack(spacing: 8) {
-                                Image(systemName: "plus")
-                                    .font(.system(size: 13, weight: .semibold))
-                                Text("Add exercise")
-                                    .font(.system(size: 15, weight: .medium))
-                            }
-                            .foregroundColor(GymOSColors.primaryPurple)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 16)
-                            .background(GymOSColors.primaryPurple.opacity(0.08))
-                            .cornerRadius(12)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 12)
-                                    .stroke(GymOSColors.primaryPurple.opacity(0.25), lineWidth: 0.5)
+                List {
+                    if let workout = workoutManager.currentWorkout {
+                        ForEach(Array(workout.exercises.enumerated()), id: \.element.id) { exIndex, session in
+                            ExerciseCard(
+                                session: session,
+                                exerciseIndex: exIndex,
+                                onLogSet: { setIndex in
+                                    logSheet = LogSheetData(exerciseIndex: exIndex, setIndex: setIndex, session: session)
+                                },
+                                onAddSet: {
+                                    workoutManager.addSet(to: exIndex)
+                                },
+                                onDeleteSet: { setIndex in
+                                    workoutManager.removeSet(exerciseIndex: exIndex, setIndex: setIndex)
+                                },
+                                onRemoveExercise: {
+                                    workoutManager.removeExercise(at: exIndex)
+                                },
+                                onEditNote: {
+                                    notingExerciseIndex = exIndex
+                                }
                             )
+                            .listRowBackground(Color.clear)
+                            .listRowInsets(EdgeInsets())
+                            .listRowSeparator(.hidden)
                         }
-                        .padding(.horizontal, 20)
-
-                        Spacer(minLength: 40)
+                        .onMove { source, destination in
+                            workoutManager.moveExercise(from: source, to: destination)
+                        }
                     }
-                    .padding(.top, 24)
+                    
+                    // Add exercise button
+                    Button {
+                        showingExercisePicker = true
+                    } label: {
+                        HStack(spacing: 8) {
+                            Image(systemName: "plus")
+                                .font(.system(size: 13, weight: .semibold))
+                            Text("Add exercise")
+                                .font(.system(size: 15, weight: .medium))
+                        }
+                        .foregroundColor(GymOSColors.primaryPurple)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 16)
+                        .background(GymOSColors.primaryPurple.opacity(0.08))
+                        .cornerRadius(12)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 12)
+                                .stroke(GymOSColors.primaryPurple.opacity(0.25), lineWidth: 0.5)
+                        )
+                    }
+                    .listRowBackground(Color.clear)
+                    .listRowInsets(EdgeInsets(top: 8, leading: 20, bottom: 8, trailing: 20))
+                    .listRowSeparator(.hidden)
                 }
+                .listStyle(.plain)
+                .scrollContentBackground(.hidden)
             }
         }
         .sheet(item: $logSheet) { data in
@@ -128,6 +133,7 @@ struct ActiveWorkoutView: View {
         .confirmationDialog("End workout?", isPresented: $showingEndConfirm, titleVisibility: .visible) {
             Button("End & discard", role: .destructive) {
                 workoutManager.currentWorkout = nil
+                workoutManager.stopLiveActivity()
                 dismiss()
             }
             Button("Cancel", role: .cancel) {}

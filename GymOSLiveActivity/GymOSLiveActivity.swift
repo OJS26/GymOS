@@ -1,88 +1,88 @@
-//
-//  GymOSLiveActivity.swift
-//  GymOSLiveActivity
-//
-//  Created by OJ Strachan on 24/06/2026.
-//
-
+import ActivityKit
 import WidgetKit
 import SwiftUI
 
-struct Provider: AppIntentTimelineProvider {
-    func placeholder(in context: Context) -> SimpleEntry {
-        SimpleEntry(date: Date(), configuration: ConfigurationAppIntent())
-    }
-
-    func snapshot(for configuration: ConfigurationAppIntent, in context: Context) async -> SimpleEntry {
-        SimpleEntry(date: Date(), configuration: configuration)
-    }
-    
-    func timeline(for configuration: ConfigurationAppIntent, in context: Context) async -> Timeline<SimpleEntry> {
-        var entries: [SimpleEntry] = []
-
-        // Generate a timeline consisting of five entries an hour apart, starting from the current date.
-        let currentDate = Date()
-        for hourOffset in 0 ..< 5 {
-            let entryDate = Calendar.current.date(byAdding: .hour, value: hourOffset, to: currentDate)!
-            let entry = SimpleEntry(date: entryDate, configuration: configuration)
-            entries.append(entry)
-        }
-
-        return Timeline(entries: entries, policy: .atEnd)
-    }
-
-//    func relevances() async -> WidgetRelevances<ConfigurationAppIntent> {
-//        // Generate a list containing the contexts this widget is relevant in.
-//    }
-}
-
-struct SimpleEntry: TimelineEntry {
-    let date: Date
-    let configuration: ConfigurationAppIntent
-}
-
-struct GymOSLiveActivityEntryView : View {
-    var entry: Provider.Entry
-
-    var body: some View {
-        VStack {
-            Text("Time:")
-            Text(entry.date, style: .time)
-
-            Text("Favorite Emoji:")
-            Text(entry.configuration.favoriteEmoji)
-        }
-    }
-}
-
-struct GymOSLiveActivity: Widget {
-    let kind: String = "GymOSLiveActivity"
-
+// MARK: - Live Activity Widget
+struct GymOSLiveActivityWidget: Widget {
     var body: some WidgetConfiguration {
-        AppIntentConfiguration(kind: kind, intent: ConfigurationAppIntent.self, provider: Provider()) { entry in
-            GymOSLiveActivityEntryView(entry: entry)
-                .containerBackground(.fill.tertiary, for: .widget)
+        ActivityConfiguration(for: GymOSActivityAttributes.self) { context in
+            // Lock screen / banner UI
+            HStack {
+                Image(systemName: "dumbbell.fill")
+                    .foregroundColor(.purple)
+                    .font(.system(size: 16, weight: .semibold))
+                
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(context.state.workoutName)
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(.white)
+                    Text("Workout in progress — tap to log")
+                        .font(.system(size: 12))
+                        .foregroundColor(.white.opacity(0.6))
+                }
+                
+                Spacer()
+                
+                Text(timerInterval: context.attributes.startTime...Date.distantFuture, countsDown: false)
+                    .font(.system(size: 14, weight: .medium, design: .rounded))
+                    .foregroundColor(.purple)
+                    .monospacedDigit()
+                    .frame(width: 50)
+            }
+            .padding(16)
+            .background(Color(red: 0.05, green: 0.05, blue: 0.07))
+            .activityBackgroundTint(Color(red: 0.05, green: 0.05, blue: 0.07))
+            .activitySystemActionForegroundColor(.white)
+
+        } dynamicIsland: { context in
+            DynamicIsland {
+                // Expanded view (long press)
+                DynamicIslandExpandedRegion(.leading) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "dumbbell.fill")
+                            .foregroundColor(.purple)
+                            .font(.system(size: 16))
+                        Text(context.state.workoutName)
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundColor(.white)
+                    }
+                    .padding(.leading, 8)
+                }
+                
+                DynamicIslandExpandedRegion(.trailing) {
+                    Text(timerInterval: context.attributes.startTime...Date.distantFuture, countsDown: false)
+                        .font(.system(size: 13, weight: .medium, design: .rounded))
+                        .foregroundColor(.purple)
+                        .monospacedDigit()
+                        .padding(.trailing, 8)
+                }
+                
+                DynamicIslandExpandedRegion(.bottom) {
+                    Text("Tap to log your next set")
+                        .font(.system(size: 12))
+                        .foregroundColor(.white.opacity(0.5))
+                        .padding(.bottom, 8)
+                }
+                
+            } compactLeading: {
+                Image(systemName: "dumbbell.fill")
+                    .foregroundColor(.purple)
+                    .font(.system(size: 12))
+                    .padding(.leading, 4)
+                    
+            } compactTrailing: {
+                Text(timerInterval: context.attributes.startTime...Date.distantFuture, countsDown: false)
+                    .font(.system(size: 11, weight: .medium, design: .rounded))
+                    .foregroundColor(.purple)
+                    .monospacedDigit()
+                    .frame(width: 36)
+                    
+            } minimal: {
+                Image(systemName: "dumbbell.fill")
+                    .foregroundColor(.purple)
+                    .font(.system(size: 12))
+            }
         }
     }
 }
 
-extension ConfigurationAppIntent {
-    fileprivate static var smiley: ConfigurationAppIntent {
-        let intent = ConfigurationAppIntent()
-        intent.favoriteEmoji = "😀"
-        return intent
-    }
-    
-    fileprivate static var starEyes: ConfigurationAppIntent {
-        let intent = ConfigurationAppIntent()
-        intent.favoriteEmoji = "🤩"
-        return intent
-    }
-}
-
-#Preview(as: .systemSmall) {
-    GymOSLiveActivity()
-} timeline: {
-    SimpleEntry(date: .now, configuration: .smiley)
-    SimpleEntry(date: .now, configuration: .starEyes)
-}

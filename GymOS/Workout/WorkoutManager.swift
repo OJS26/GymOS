@@ -1,5 +1,6 @@
 import SwiftUI
 import Foundation
+import ActivityKit
 
 // MARK: - Workout Manager
 class WorkoutManager: ObservableObject {
@@ -22,6 +23,8 @@ class WorkoutManager: ObservableObject {
     @Published var restTimerSetNumber: Int = 0
     
     private var restTimer: Timer?
+    
+    private var liveActivity: Activity<GymOSActivityAttributes>?
     
     init() {
         loadSampleExercises()
@@ -237,6 +240,7 @@ class WorkoutManager: ObservableObject {
         }
         
         currentWorkout = workout
+        startLiveActivity(workoutName: name)
     }
     
     func finishWorkout(reflectionScore: Int, reflectionNotes: String) -> Workout? {
@@ -246,6 +250,7 @@ class WorkoutManager: ObservableObject {
         workout.reflectionNotes = reflectionNotes
         workouts.insert(workout, at: 0)
         currentWorkout = nil
+        stopLiveActivity()
         saveData()
         return workout
     }
@@ -262,6 +267,10 @@ class WorkoutManager: ObservableObject {
     func removeExercise(at index: Int) {
         guard currentWorkout != nil else { return }
         currentWorkout?.exercises.remove(at: index)
+    }
+    
+    func moveExercise(from source: IndexSet, to destination: Int) {
+        currentWorkout?.exercises.move(fromOffsets: source, toOffset: destination)
     }
     
     // MARK: - Set Management
@@ -372,6 +381,34 @@ class WorkoutManager: ObservableObject {
         return "\(suggested.clean)kg"
     }
     
+    func startLiveActivity(workoutName: String) {
+        // Write to shared UserDefaults for lock screen widget
+        let shared = UserDefaults(suiteName: "group.com.OJStrachan.GymOS")
+        shared?.set(true, forKey: "workoutActive")
+        shared?.set(workoutName, forKey: "workoutName")
+        
+        guard ActivityAuthorizationInfo().areActivitiesEnabled else { return }
+        let attributes = GymOSActivityAttributes(startTime: Date())
+        let state = GymOSActivityAttributes.ContentState(workoutName: workoutName, isActive: true)
+        do {
+            liveActivity = try Activity.request(attributes: attributes, content: .init(state: state, staleDate: nil), pushType: nil)
+        } catch {
+            print("Failed to start live activity: \(error)")
+        }
+    }
+
+    func stopLiveActivity() {
+        let shared = UserDefaults(suiteName: "group.com.OJStrachan.GymOS")
+        shared?.set(false, forKey: "workoutActive")
+        shared?.removeObject(forKey: "workoutName")
+        
+        Task {
+            for activity in Activity<GymOSActivityAttributes>.activities {
+                await activity.end(.init(state: .init(workoutName: "", isActive: false), staleDate: nil), dismissalPolicy: .immediate)
+            }
+        }
+    }
+    
     func startRunningSession() {
         currentRunningSession = RunningSession(isActive: true)
     }
@@ -417,6 +454,7 @@ class WorkoutManager: ObservableObject {
             print("📦 Loaded current workout: \(decoded.name), exercises: \(decoded.exercises.count)")
         } else {
             print("❌ No saved workout found")
+            stopLiveActivity()
         }
     }
 
