@@ -12,17 +12,6 @@ class WorkoutManager: ObservableObject {
     }
     @Published var availableExercises: [Exercise] = []
     @Published var workoutDays: [WorkoutDay] = []
-    @Published var runningSessions: [RunningSession] = []
-    @Published var currentRunningSession: RunningSession?
-    
-    // Rest Timer Properties
-    @Published var restTimerSettings = RestTimerSettings()
-    @Published var isRestTimerActive = false
-    @Published var restTimeElapsed: TimeInterval = 0
-    @Published var restTimerExercise: String = ""
-    @Published var restTimerSetNumber: Int = 0
-    
-    private var restTimer: Timer?
     
     private var liveActivity: Activity<GymOSActivityAttributes>?
     
@@ -30,71 +19,10 @@ class WorkoutManager: ObservableObject {
         loadSampleExercises()
         loadSampleWorkoutDays()
         loadData()
-        loadRunningData() 
-        loadRestTimerSettings()
         loadCurrentWorkout()
     }
     
-    // MARK: - Rest Timer Functions
-    func startRestTimer(for exercise: String, setNumber: Int, duration: TimeInterval? = nil) {
-        guard restTimerSettings.isEnabled else { return }
-        
-        restTimeElapsed = 0
-        restTimerExercise = exercise
-        restTimerSetNumber = setNumber
-        isRestTimerActive = true
-        
-        restTimer?.invalidate()
-        restTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { _ in
-            self.restTimeElapsed += 1
-            
-            // Optional: Add haptic feedback at common rest intervals
-            if self.restTimeElapsed == 60 || self.restTimeElapsed == 90 || self.restTimeElapsed == 120 {
-                self.sendRestMilestoneNotification()
-            }
-        }
-    }
-    
-    func stopRestTimer() -> TimeInterval {
-        let finalRestTime = restTimeElapsed
-        
-        restTimer?.invalidate()
-        restTimer = nil
-        isRestTimerActive = false
-        restTimeElapsed = 0
-        restTimerExercise = ""
-        restTimerSetNumber = 0
-        
-        return finalRestTime // Return the actual rest time for analytics
-    }
-    
-    func pauseRestTimer() {
-        restTimer?.invalidate()
-        restTimer = nil
-    }
-    
-    func resumeRestTimer() {
-        guard isRestTimerActive else { return }
-        
-        restTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { _ in
-            self.restTimeElapsed += 1
-            
-            if self.restTimeElapsed == 60 || self.restTimeElapsed == 90 || self.restTimeElapsed == 120 {
-                self.sendRestMilestoneNotification()
-            }
-        }
-    }
-    
-    private func sendRestMilestoneNotification() {
-        // Gentle haptic feedback at rest milestones
-        let impactFeedback = UIImpactFeedbackGenerator(style: .light)
-        impactFeedback.impactOccurred()
-    }
-    
-    func updateRestTimerSettings(_ settings: RestTimerSettings) {
-        restTimerSettings = settings
-        saveRestTimerSettings()
-    }
+
     
     // MARK: - Sample Data Loading
     private func loadSampleExercises() {
@@ -289,12 +217,6 @@ class WorkoutManager: ObservableObject {
     func completeSet(exerciseIndex: Int, setIndex: Int) {
         guard currentWorkout != nil else { return }
         currentWorkout?.exercises[exerciseIndex].sets[setIndex].isCompleted.toggle()
-        
-        // Start rest timer if set was just completed (not uncompleted)
-        if currentWorkout?.exercises[exerciseIndex].sets[setIndex].isCompleted == true && restTimerSettings.autoStart {
-            let exerciseName = currentWorkout?.exercises[exerciseIndex].exercise.name ?? ""
-            startRestTimer(for: exerciseName, setNumber: setIndex + 1)
-        }
     }
     
     func removeSet(exerciseIndex: Int, setIndex: Int) {
@@ -409,33 +331,6 @@ class WorkoutManager: ObservableObject {
         }
     }
     
-    func startRunningSession() {
-        currentRunningSession = RunningSession(isActive: true)
-    }
-
-    func endRunningSession(distance: Double, notes: String = "") {
-        guard var session = currentRunningSession else { return }
-        session.isActive = false
-        session.distance = distance
-        session.notes = notes
-        runningSessions.insert(session, at: 0)
-        currentRunningSession = nil
-        saveRunningData()
-    }
-
-    private func saveRunningData() {
-        if let encoded = try? JSONEncoder().encode(runningSessions) {
-            UserDefaults.standard.set(encoded, forKey: "runningSessions")
-        }
-    }
-
-    private func loadRunningData() {
-        if let data = UserDefaults.standard.data(forKey: "runningSessions"),
-           let decoded = try? JSONDecoder().decode([RunningSession].self, from: data) {
-            runningSessions = decoded
-        }
-    }
-    
     // MARK: - Data Persistence
     private func saveCurrentWorkout() {
         if let workout = currentWorkout, let encoded = try? JSONEncoder().encode(workout) {
@@ -472,21 +367,6 @@ class WorkoutManager: ObservableObject {
         }
         
         print("Data saved to UserDefaults")
-    }
-    
-    private func saveRestTimerSettings() {
-        if let encoded = try? JSONEncoder().encode(restTimerSettings) {
-            UserDefaults.standard.set(encoded, forKey: "restTimerSettings")
-        }
-    }
-    
-    private func loadRestTimerSettings() {
-        if let data = UserDefaults.standard.data(forKey: "restTimerSettings"),
-           let decoded = try? JSONDecoder().decode(RestTimerSettings.self, from: data) {
-            restTimerSettings = decoded
-        } else {
-            restTimerSettings = RestTimerSettings()
-        }
     }
     
     private func loadData() {

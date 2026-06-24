@@ -7,20 +7,6 @@ enum SetMode: String, Codable, CaseIterable {
     case pump = "Pump"
 }
 
-// MARK: - Rest Timer Settings
-struct RestTimerSettings: Codable {
-    var isEnabled: Bool = true
-    var autoStart: Bool = true
-    var showMilestoneHaptics: Bool = true // Haptic feedback at 1min, 1.5min, 2min
-    
-    // Custom initializer for default values
-    init(isEnabled: Bool = true, autoStart: Bool = true, showMilestoneHaptics: Bool = true) {
-        self.isEnabled = isEnabled
-        self.autoStart = autoStart
-        self.showMilestoneHaptics = showMilestoneHaptics
-    }
-}
-
 // MARK: - Exercise Model
 struct Exercise: Identifiable, Codable {
     let id: UUID
@@ -48,7 +34,6 @@ struct Exercise: Identifiable, Codable {
         case arms = "Arms"
         case legs = "Legs"
         case core = "Core"
-        case cardio = "Cardio"
     }
 }
 
@@ -172,50 +157,6 @@ extension Color {
         case "cyan": return .cyan
         default: return .blue
         }
-    }
-}
-
-// MARK: - Running Models
-struct RunningSession: Identifiable, Codable {
-    let id: UUID
-    let date: Date
-    var distance: Double // km
-    var duration: TimeInterval // seconds
-    var notes: String = ""
-    var isActive: Bool = false
-    
-    init(date: Date = Date(), distance: Double = 0, duration: TimeInterval = 0, notes: String = "", isActive: Bool = false) {
-        self.id = UUID()
-        self.date = date
-        self.distance = distance
-        self.duration = duration
-        self.notes = notes
-        self.isActive = isActive
-    }
-    
-    var pace: TimeInterval {
-        distance > 0 ? duration / distance : 0
-    }
-    
-    // REPLACE the old paceString with this improved version:
-    var paceString: String {
-        if distance > 0 {
-            // Real pace calculation when distance is available
-            let minutes = Int(pace) / 60
-            let seconds = Int(pace) % 60
-            return String(format: "%d:%02d /km", minutes, seconds)
-        } else {
-            // For treadmill running without distance tracking
-            let totalMinutes = duration / 60
-            let minutes = Int(totalMinutes)
-            let seconds = Int((totalMinutes - Double(minutes)) * 60)
-            return String(format: "%d:%02d total", minutes, seconds)
-        }
-    }
-    
-    // ADD this new property:
-    var averagePace: TimeInterval {
-        duration / 60 // Simple time-based calculation for gym running
     }
 }
 
