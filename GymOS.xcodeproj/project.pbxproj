@@ -10,6 +10,7 @@
 		2F0194B62FEBFB00005267F2 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2F0194B52FEBFB00005267F2 /* WidgetKit.framework */; };
 		2F0194B82FEBFB00005267F2 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2F0194B72FEBFB00005267F2 /* SwiftUI.framework */; };
 		2F0194C92FEBFB02005267F2 /* GymOSLiveActivityExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 2F0194B32FEBFB00005267F2 /* GymOSLiveActivityExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		2F0194D92FEC2B53005267F2 /* MuscleMap in Frameworks */ = {isa = PBXBuildFile; productRef = 2F0194D82FEC2B53005267F2 /* MuscleMap */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -128,6 +129,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				2F0194D92FEC2B53005267F2 /* MuscleMap in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -225,6 +227,7 @@
 			);
 			name = GymOS;
 			packageProductDependencies = (
+				2F0194D82FEC2B53005267F2 /* MuscleMap */,
 			);
 			productName = GymOS;
 			productReference = 2FE936992E0ADED5000C2F1D /* GymOS.app */;
@@ -311,6 +314,9 @@
 			);
 			mainGroup = 2FE936902E0ADED5000C2F1D;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				2F0194D72FEC2B53005267F2 /* XCRemoteSwiftPackageReference "MuscleMap" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 2FE9369A2E0ADED5000C2F1D /* Products */;
 			projectDirPath = "";
@@ -777,6 +783,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		2F0194D72FEC2B53005267F2 /* XCRemoteSwiftPackageReference "MuscleMap" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/melihcolpan/MuscleMap.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.6.4;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		2F0194D82FEC2B53005267F2 /* MuscleMap */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 2F0194D72FEC2B53005267F2 /* XCRemoteSwiftPackageReference "MuscleMap" */;
+			productName = MuscleMap;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 2FE936912E0ADED5000C2F1D /* Project object */;
 }

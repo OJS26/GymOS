@@ -16,7 +16,7 @@ struct ContentView: View {
                     Text("Today")
                 }
             
-            BodyView()
+            BodyTabView()
                 .tabItem {
                     Image(systemName: "figure.arms.open")
                     Text("Body")
