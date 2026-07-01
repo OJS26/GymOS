@@ -56,64 +56,59 @@ struct ActiveWorkoutView: View {
                     alignment: .bottom
                 )
 
-                // Exercise list
-                List {
-                    if let workout = workoutManager.currentWorkout {
-                        ForEach(Array(workout.exercises.enumerated()), id: \.element.id) { exIndex, session in
-                            ExerciseCard(
-                                session: session,
-                                exerciseIndex: exIndex,
-                                onLogSet: { setIndex in
-                                    logSheet = LogSheetData(exerciseIndex: exIndex, setIndex: setIndex, session: session)
-                                },
-                                onAddSet: {
-                                    workoutManager.addSet(to: exIndex)
-                                },
-                                onDeleteSet: { setIndex in
-                                    workoutManager.removeSet(exerciseIndex: exIndex, setIndex: setIndex)
-                                },
-                                onRemoveExercise: {
-                                    workoutManager.removeExercise(at: exIndex)
-                                },
-                                onEditNote: {
-                                    notingExerciseIndex = exIndex
-                                }
+                // Exercise list — ScrollView instead of List to avoid tap conflicts
+                ScrollView(showsIndicators: false) {
+                    VStack(spacing: 16) {
+                        if let workout = workoutManager.currentWorkout {
+                            ForEach(Array(workout.exercises.enumerated()), id: \.element.id) { exIndex, session in
+                                ExerciseCard(
+                                    session: session,
+                                    exerciseIndex: exIndex,
+                                    onLogSet: { setIndex in
+                                        logSheet = LogSheetData(exerciseIndex: exIndex, setIndex: setIndex, session: session)
+                                    },
+                                    onAddSet: {
+                                        workoutManager.addSet(to: exIndex)
+                                    },
+                                    onDeleteSet: { setIndex in
+                                        workoutManager.removeSet(exerciseIndex: exIndex, setIndex: setIndex)
+                                    },
+                                    onRemoveExercise: {
+                                        workoutManager.removeExercise(at: exIndex)
+                                    },
+                                    onEditNote: {
+                                        notingExerciseIndex = exIndex
+                                    }
+                                )
+                            }
+                        }
+
+                        // Add exercise button
+                        Button {
+                            showingExercisePicker = true
+                        } label: {
+                            HStack(spacing: 8) {
+                                Image(systemName: "plus")
+                                    .font(.system(size: 13, weight: .semibold))
+                                Text("Add exercise")
+                                    .font(.system(size: 15, weight: .medium))
+                            }
+                            .foregroundColor(GymOSColors.primaryPurple)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 16)
+                            .background(GymOSColors.primaryPurple.opacity(0.08))
+                            .cornerRadius(12)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .stroke(GymOSColors.primaryPurple.opacity(0.25), lineWidth: 0.5)
                             )
-                            .listRowBackground(Color.clear)
-                            .listRowInsets(EdgeInsets())
-                            .listRowSeparator(.hidden)
                         }
-                        .onMove { source, destination in
-                            workoutManager.moveExercise(from: source, to: destination)
-                        }
+                        .padding(.horizontal, 20)
+
+                        Spacer(minLength: 40)
                     }
-                    
-                    // Add exercise button
-                    Button {
-                        showingExercisePicker = true
-                    } label: {
-                        HStack(spacing: 8) {
-                            Image(systemName: "plus")
-                                .font(.system(size: 13, weight: .semibold))
-                            Text("Add exercise")
-                                .font(.system(size: 15, weight: .medium))
-                        }
-                        .foregroundColor(GymOSColors.primaryPurple)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 16)
-                        .background(GymOSColors.primaryPurple.opacity(0.08))
-                        .cornerRadius(12)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 12)
-                                .stroke(GymOSColors.primaryPurple.opacity(0.25), lineWidth: 0.5)
-                        )
-                    }
-                    .listRowBackground(Color.clear)
-                    .listRowInsets(EdgeInsets(top: 8, leading: 20, bottom: 8, trailing: 20))
-                    .listRowSeparator(.hidden)
+                    .padding(.top, 16)
                 }
-                .listStyle(.plain)
-                .scrollContentBackground(.hidden)
             }
         }
         .sheet(item: $logSheet) { data in
@@ -123,7 +118,7 @@ struct ActiveWorkoutView: View {
                 session: data.session
             )
             .environmentObject(workoutManager)
-            .presentationDetents([.height(420)])
+            .presentationDetents([.height(480)])
             .presentationDragIndicator(.visible)
         }
         .sheet(isPresented: $showingExercisePicker) {
@@ -144,7 +139,6 @@ struct ActiveWorkoutView: View {
                 dismiss()
             }
         }
-        
         .sheet(isPresented: Binding(
             get: { notingExerciseIndex != nil },
             set: { if !$0 { notingExerciseIndex = nil } }
@@ -156,7 +150,6 @@ struct ActiveWorkoutView: View {
                     .presentationDragIndicator(.visible)
             }
         }
-        
         .fullScreenCover(isPresented: $showingReflection) {
             ReflectionView { score, notes in
                 showingReflection = false
@@ -187,7 +180,7 @@ struct ExerciseCard: View {
     let onEditNote: () -> Void
 
     @EnvironmentObject var workoutManager: WorkoutManager
-    
+
     private var lastSession: ExerciseSession? {
         workoutManager.getExerciseHistory(for: session.exercise).last
     }
@@ -200,15 +193,11 @@ struct ExerciseCard: View {
         VStack(alignment: .leading, spacing: 0) {
 
             // Exercise header
-            HStack {
+            HStack(alignment: .top) {
                 VStack(alignment: .leading, spacing: 4) {
-                    Button {
-                        onEditNote()
-                    } label: {
-                        Text(session.exercise.name)
-                            .font(.system(size: 17, weight: .semibold))
-                            .foregroundColor(.white)
-                    }
+                    Text(session.exercise.name)
+                        .font(.system(size: 17, weight: .semibold))
+                        .foregroundColor(.white)
 
                     if let last = lastSession {
                         Text("Last: " + last.sets.filter { $0.isCompleted }.map {
@@ -226,8 +215,7 @@ struct ExerciseCard: View {
                             .foregroundColor(GymOSColors.primaryPurple.opacity(0.7))
                             .lineLimit(2)
                     }
-                    
-                    // Variation + mode tags
+
                     HStack(spacing: 6) {
                         if !session.variation.isEmpty {
                             Text(session.variation)
@@ -238,7 +226,7 @@ struct ExerciseCard: View {
                                 .background(Color.white.opacity(0.06))
                                 .cornerRadius(6)
                         }
-                        
+
                         let modes = Set(session.sets.map { $0.mode })
                         ForEach(Array(modes), id: \.self) { mode in
                             Text(mode.rawValue)
@@ -250,7 +238,7 @@ struct ExerciseCard: View {
                                 .cornerRadius(6)
                         }
                     }
-                    
+
                     if !session.notes.isEmpty {
                         Text("📝 " + session.notes)
                             .font(.system(size: 12))
@@ -261,29 +249,47 @@ struct ExerciseCard: View {
 
                 Spacer()
 
-                if let s = suggestion {
-                    Text("Try \(s)")
-                        .font(.system(size: 11, weight: .medium))
-                        .foregroundColor(GymOSColors.primaryPurple)
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 5)
-                        .background(GymOSColors.primaryPurple.opacity(0.12))
-                        .cornerRadius(8)
-                }
+                VStack(alignment: .trailing, spacing: 8) {
+                    HStack(spacing: 8) {
+                        if let s = suggestion {
+                            Text("Try \(s)")
+                                .font(.system(size: 11, weight: .medium))
+                                .foregroundColor(GymOSColors.primaryPurple)
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 5)
+                                .background(GymOSColors.primaryPurple.opacity(0.12))
+                                .cornerRadius(8)
+                        }
 
-                Menu {
-                    Button(role: .destructive) {
-                        onRemoveExercise()
-                    } label: {
-                        Label("Remove exercise", systemImage: "trash")
+                        // Notes button
+                        Button {
+                            onEditNote()
+                        } label: {
+                            Image(systemName: session.notes.isEmpty ? "note.text" : "note.text.badge.plus")
+                                .font(.system(size: 15))
+                                .foregroundColor(session.notes.isEmpty ? Color.white.opacity(0.3) : GymOSColors.primaryPurple)
+                        }
+                        .buttonStyle(.plain)
+
+                        // Menu
+                        Menu {
+                            Button(role: .destructive) {
+                                onRemoveExercise()
+                            } label: {
+                                Label("Remove exercise", systemImage: "trash")
+                            }
+                        } label: {
+                            Image(systemName: "ellipsis")
+                                .font(.system(size: 15))
+                                .foregroundColor(Color.white.opacity(0.3))
+                        }
+                        .buttonStyle(.plain)
                     }
-                } label: {
-                    Image(systemName: "ellipsis")
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundColor(Color.white.opacity(0.3))
-                        .padding(.leading, 8)
                 }
             }
+            .padding(.horizontal, 16)
+            .padding(.top, 14)
+            .padding(.bottom, 12)
 
             // Column headers
             HStack {
@@ -297,16 +303,16 @@ struct ExerciseCard: View {
                     .frame(width: 60, alignment: .center)
                 Spacer()
                 Text("")
-                    .frame(width: 32)
+                    .frame(width: 44)
             }
             .font(.system(size: 10, weight: .medium))
             .foregroundColor(Color.white.opacity(0.2))
             .tracking(1.5)
-            .padding(.horizontal, 20)
-            .padding(.bottom, 8)
+            .padding(.horizontal, 16)
+            .padding(.bottom, 6)
 
             // Sets
-            List {
+            VStack(spacing: 0) {
                 ForEach(Array(session.sets.enumerated()), id: \.element.id) { setIndex, set in
                     SetRow(
                         setNumber: setIndex + 1,
@@ -314,15 +320,13 @@ struct ExerciseCard: View {
                         onTap: { onLogSet(setIndex) },
                         onDelete: { onDeleteSet(setIndex) }
                     )
-                    .listRowBackground(set.isCompleted ? GymOSColors.primaryPurple.opacity(0.05) : Color.white.opacity(0.04))
-                    .listRowInsets(EdgeInsets())
                 }
             }
-            .listStyle(.plain)
-            .frame(height: CGFloat(session.sets.count) * 50)
 
-            // Add set
-            Button(action: onAddSet) {
+            // Add set button
+            Button {
+                onAddSet()
+            } label: {
                 HStack(spacing: 6) {
                     Image(systemName: "plus")
                         .font(.system(size: 11, weight: .semibold))
@@ -330,16 +334,18 @@ struct ExerciseCard: View {
                         .font(.system(size: 13))
                 }
                 .foregroundColor(Color.white.opacity(0.3))
-                .padding(.horizontal, 20)
+                .padding(.horizontal, 16)
                 .padding(.vertical, 12)
             }
+            .buttonStyle(.plain)
         }
-        .padding(.vertical, 16)
         .background(Color.white.opacity(0.04))
+        .cornerRadius(14)
         .overlay(
-            Rectangle()
+            RoundedRectangle(cornerRadius: 14)
                 .stroke(Color.white.opacity(0.06), lineWidth: 0.5)
         )
+        .padding(.horizontal, 20)
     }
 }
 
@@ -373,27 +379,35 @@ struct SetRow: View {
 
             Spacer()
 
-            HStack(spacing: 4) {
+            HStack(spacing: 6) {
                 Circle()
                     .fill(set.mode == .strength ? GymOSColors.primaryPurple : .orange)
                     .frame(width: 6, height: 6)
                     .opacity(set.isCompleted ? 1 : 0)
-                
+
                 Image(systemName: set.isCompleted ? "checkmark.circle.fill" : "circle")
                     .font(.system(size: 22))
                     .foregroundColor(set.isCompleted ? GymOSColors.primaryPurple : Color.white.opacity(0.2))
             }
-            .frame(width: 32)
+            .frame(width: 44)
+
+            // Delete button — visible, no swipe needed
+            Button {
+                onDelete()
+            } label: {
+                Image(systemName: "minus.circle")
+                    .font(.system(size: 16))
+                    .foregroundColor(Color.white.opacity(0.15))
+            }
+            .buttonStyle(.plain)
+            .frame(width: 28)
         }
-        .padding(.horizontal, 20)
-        .padding(.vertical, 12)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 10)
         .background(set.isCompleted ? GymOSColors.primaryPurple.opacity(0.05) : Color.clear)
         .contentShape(Rectangle())
-        .onTapGesture { onTap() }
-        .swipeActions(edge: .trailing) {
-            Button(role: .destructive, action: onDelete) {
-                Label("Delete", systemImage: "trash")
-            }
+        .onTapGesture {
+            onTap()
         }
     }
 }
@@ -405,238 +419,235 @@ struct LogSetSheet: View {
     @State private var selectedMode: SetMode = .strength
     @State private var variationText: String = ""
     @State private var showingNewVariation: Bool = false
-    
+
     let exerciseIndex: Int
     let setIndex: Int
     let session: ExerciseSession
-    
+
     @State private var weightText: String = ""
     @State private var repsText: String = ""
-    
+
     private var lastSet: WorkoutSet? {
         workoutManager.getExerciseHistory(for: session.exercise).last?.sets.last { $0.isCompleted }
     }
-    
+
     private var suggestion: String? {
         workoutManager.weightSuggestion(for: session.exercise, variation: session.variation)
     }
-    
+
     private var previousVariations: [String] {
         workoutManager.previousVariations(for: session.exercise)
     }
-    
+
     var body: some View {
         ZStack {
             Color(red: 0.08, green: 0.08, blue: 0.10).ignoresSafeArea()
-            
-            VStack(alignment: .leading, spacing: 24) {
-                
-                // Title
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(session.exercise.name)
-                        .font(.system(size: 20, weight: .semibold))
-                        .foregroundColor(.white)
-                    Text("Set \(setIndex + 1)")
-                        .font(.system(size: 14))
-                        .foregroundColor(Color.white.opacity(0.35))
-                }
-                
-                // Last session + suggestion
-                if lastSet != nil || suggestion != nil {
-                    HStack(spacing: 16) {
-                        if let last = lastSet {
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text("LAST TIME")
-                                    .font(.system(size: 10, weight: .medium))
-                                    .foregroundColor(Color.white.opacity(0.25))
-                                    .tracking(1.5)
-                                Text("\(last.weight.clean)kg × \(last.reps)")
-                                    .font(.system(size: 15, weight: .medium))
-                                    .foregroundColor(Color.white.opacity(0.6))
-                            }
-                        }
-                        
-                        if let s = suggestion {
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text("SUGGESTED")
-                                    .font(.system(size: 10, weight: .medium))
-                                    .foregroundColor(Color.white.opacity(0.25))
-                                    .tracking(1.5)
-                                Text(s)
-                                    .font(.system(size: 15, weight: .medium))
-                                    .foregroundColor(GymOSColors.primaryPurple)
-                            }
-                        }
+
+            ScrollView(showsIndicators: false) {
+                VStack(alignment: .leading, spacing: 20) {
+
+                    // Title
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(session.exercise.name)
+                            .font(.system(size: 20, weight: .semibold))
+                            .foregroundColor(.white)
+                        Text("Set \(setIndex + 1)")
+                            .font(.system(size: 14))
+                            .foregroundColor(Color.white.opacity(0.35))
                     }
-                    .padding(14)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(Color.white.opacity(0.04))
-                    .cornerRadius(10)
-                }
-                
-                // Variation input
-                // Variation picker
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("VARIATION (OPTIONAL)")
-                        .font(.system(size: 10, weight: .medium))
-                        .foregroundColor(Color.white.opacity(0.25))
-                        .tracking(1.5)
-                    
-                    // previousVariations is now a computed property above
-                    
-                    if !previousVariations.isEmpty {
-                        ScrollView(.horizontal, showsIndicators: false) {
-                            HStack(spacing: 8) {
-                                // None option
-                                Button {
-                                    variationText = ""
-                                } label: {
-                                    Text("None")
-                                        .font(.system(size: 13, weight: .medium))
-                                        .foregroundColor(variationText.isEmpty ? .white : Color.white.opacity(0.4))
-                                        .padding(.horizontal, 12)
-                                        .padding(.vertical, 7)
-                                        .background(variationText.isEmpty ? GymOSColors.primaryPurple : Color.white.opacity(0.06))
-                                        .cornerRadius(20)
+
+                    // Last session + suggestion
+                    if lastSet != nil || suggestion != nil {
+                        HStack(spacing: 16) {
+                            if let last = lastSet {
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text("LAST TIME")
+                                        .font(.system(size: 10, weight: .medium))
+                                        .foregroundColor(Color.white.opacity(0.25))
+                                        .tracking(1.5)
+                                    Text("\(last.weight.clean)kg × \(last.reps)")
+                                        .font(.system(size: 15, weight: .medium))
+                                        .foregroundColor(Color.white.opacity(0.6))
                                 }
-                                
-                                ForEach(previousVariations, id: \.self) { variation in
+                            }
+
+                            if let s = suggestion {
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text("SUGGESTED")
+                                        .font(.system(size: 10, weight: .medium))
+                                        .foregroundColor(Color.white.opacity(0.25))
+                                        .tracking(1.5)
+                                    Text(s)
+                                        .font(.system(size: 15, weight: .medium))
+                                        .foregroundColor(GymOSColors.primaryPurple)
+                                }
+                            }
+                        }
+                        .padding(14)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(Color.white.opacity(0.04))
+                        .cornerRadius(10)
+                    }
+
+                    // Variation picker
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("VARIATION (OPTIONAL)")
+                            .font(.system(size: 10, weight: .medium))
+                            .foregroundColor(Color.white.opacity(0.25))
+                            .tracking(1.5)
+
+                        if !previousVariations.isEmpty {
+                            ScrollView(.horizontal, showsIndicators: false) {
+                                HStack(spacing: 8) {
                                     Button {
-                                        variationText = variation
+                                        variationText = ""
                                     } label: {
-                                        Text(variation)
+                                        Text("None")
                                             .font(.system(size: 13, weight: .medium))
-                                            .foregroundColor(variationText == variation ? .white : Color.white.opacity(0.4))
+                                            .foregroundColor(variationText.isEmpty ? .white : Color.white.opacity(0.4))
                                             .padding(.horizontal, 12)
                                             .padding(.vertical, 7)
-                                            .background(variationText == variation ? GymOSColors.primaryPurple : Color.white.opacity(0.06))
+                                            .background(variationText.isEmpty ? GymOSColors.primaryPurple : Color.white.opacity(0.06))
                                             .cornerRadius(20)
                                     }
-                                }
-                                
-                                // New variation option
-                                Button {
-                                    variationText = ""
-                                    showingNewVariation = true
-                                } label: {
-                                    HStack(spacing: 4) {
-                                        Image(systemName: "plus")
-                                            .font(.system(size: 11, weight: .semibold))
-                                        Text("New")
-                                            .font(.system(size: 13, weight: .medium))
+
+                                    ForEach(previousVariations, id: \.self) { variation in
+                                        Button {
+                                            variationText = variation
+                                        } label: {
+                                            Text(variation)
+                                                .font(.system(size: 13, weight: .medium))
+                                                .foregroundColor(variationText == variation ? .white : Color.white.opacity(0.4))
+                                                .padding(.horizontal, 12)
+                                                .padding(.vertical, 7)
+                                                .background(variationText == variation ? GymOSColors.primaryPurple : Color.white.opacity(0.06))
+                                                .cornerRadius(20)
+                                        }
                                     }
-                                    .foregroundColor(GymOSColors.primaryPurple)
-                                    .padding(.horizontal, 12)
-                                    .padding(.vertical, 7)
-                                    .background(GymOSColors.primaryPurple.opacity(0.1))
-                                    .cornerRadius(20)
+
+                                    Button {
+                                        variationText = ""
+                                        showingNewVariation = true
+                                    } label: {
+                                        HStack(spacing: 4) {
+                                            Image(systemName: "plus")
+                                                .font(.system(size: 11, weight: .semibold))
+                                            Text("New")
+                                                .font(.system(size: 13, weight: .medium))
+                                        }
+                                        .foregroundColor(GymOSColors.primaryPurple)
+                                        .padding(.horizontal, 12)
+                                        .padding(.vertical, 7)
+                                        .background(GymOSColors.primaryPurple.opacity(0.1))
+                                        .cornerRadius(20)
+                                    }
                                 }
                             }
-                        }
-                        
-                        if showingNewVariation {
-                            TextField("e.g. Low to High", text: $variationText)
+
+                            if showingNewVariation {
+                                TextField("e.g. Low to High", text: $variationText)
+                                    .font(.system(size: 15))
+                                    .foregroundColor(.white)
+                                    .padding(14)
+                                    .background(Color.white.opacity(0.06))
+                                    .cornerRadius(10)
+                            }
+                        } else {
+                            TextField("e.g. Low to High, Single Arm", text: $variationText)
                                 .font(.system(size: 15))
                                 .foregroundColor(.white)
                                 .padding(14)
                                 .background(Color.white.opacity(0.06))
                                 .cornerRadius(10)
                         }
-                    } else {
-                        TextField("e.g. Low to High, Single Arm", text: $variationText)
-                            .font(.system(size: 15))
-                            .foregroundColor(.white)
-                            .padding(14)
-                            .background(Color.white.opacity(0.06))
-                            .cornerRadius(10)
                     }
-                }
-                
-                // Mode toggle
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("MODE")
-                        .font(.system(size: 10, weight: .medium))
-                        .foregroundColor(Color.white.opacity(0.25))
-                        .tracking(1.5)
-                    
-                    HStack(spacing: 0) {
-                        ForEach(SetMode.allCases, id: \.self) { mode in
-                            Button {
-                                selectedMode = mode
-                            } label: {
-                                Text(mode.rawValue)
-                                    .font(.system(size: 14, weight: .medium))
-                                    .foregroundColor(selectedMode == mode ? .white : Color.white.opacity(0.35))
-                                    .frame(maxWidth: .infinity)
-                                    .padding(.vertical, 12)
-                                    .background(selectedMode == mode ? GymOSColors.primaryPurple : Color.clear)
+
+                    // Mode toggle
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("MODE")
+                            .font(.system(size: 10, weight: .medium))
+                            .foregroundColor(Color.white.opacity(0.25))
+                            .tracking(1.5)
+
+                        HStack(spacing: 0) {
+                            ForEach(SetMode.allCases, id: \.self) { mode in
+                                Button {
+                                    selectedMode = mode
+                                } label: {
+                                    Text(mode.rawValue)
+                                        .font(.system(size: 14, weight: .medium))
+                                        .foregroundColor(selectedMode == mode ? .white : Color.white.opacity(0.35))
+                                        .frame(maxWidth: .infinity)
+                                        .padding(.vertical, 12)
+                                        .background(selectedMode == mode ? GymOSColors.primaryPurple : Color.clear)
+                                }
                             }
                         }
+                        .background(Color.white.opacity(0.06))
+                        .cornerRadius(10)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 10)
+                                .stroke(Color.white.opacity(0.08), lineWidth: 0.5)
+                        )
                     }
-                    .background(Color.white.opacity(0.06))
-                    .cornerRadius(10)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 10)
-                            .stroke(Color.white.opacity(0.08), lineWidth: 0.5)
-                    )
-                }
-                
-                // Inputs
-                HStack(spacing: 16) {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("WEIGHT (KG)")
-                            .font(.system(size: 10, weight: .medium))
-                            .foregroundColor(Color.white.opacity(0.25))
-                            .tracking(1.5)
-                        
-                        TextField("0", text: $weightText)
-                            .keyboardType(.decimalPad)
-                            .font(.system(size: 32, weight: .bold))
+
+                    // Inputs
+                    HStack(spacing: 16) {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("WEIGHT (KG)")
+                                .font(.system(size: 10, weight: .medium))
+                                .foregroundColor(Color.white.opacity(0.25))
+                                .tracking(1.5)
+
+                            TextField("0", text: $weightText)
+                                .keyboardType(.decimalPad)
+                                .font(.system(size: 32, weight: .bold))
+                                .foregroundColor(.white)
+                                .frame(maxWidth: .infinity)
+                                .padding(14)
+                                .background(Color.white.opacity(0.06))
+                                .cornerRadius(10)
+                        }
+
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("REPS")
+                                .font(.system(size: 10, weight: .medium))
+                                .foregroundColor(Color.white.opacity(0.25))
+                                .tracking(1.5)
+
+                            TextField("0", text: $repsText)
+                                .keyboardType(.numberPad)
+                                .font(.system(size: 32, weight: .bold))
+                                .foregroundColor(.white)
+                                .frame(maxWidth: .infinity)
+                                .padding(14)
+                                .background(Color.white.opacity(0.06))
+                                .cornerRadius(10)
+                        }
+                    }
+
+                    // Confirm button
+                    Button {
+                        let weight = Double(weightText) ?? 0
+                        let reps = Int(repsText) ?? 0
+                        workoutManager.updateSet(exerciseIndex: exerciseIndex, setIndex: setIndex, reps: reps, weight: weight)
+                        workoutManager.currentWorkout?.exercises[exerciseIndex].sets[setIndex].mode = selectedMode
+                        workoutManager.currentWorkout?.exercises[exerciseIndex].variation = variationText
+                        workoutManager.completeSet(exerciseIndex: exerciseIndex, setIndex: setIndex)
+                        dismiss()
+                    } label: {
+                        Text("Log set")
+                            .font(.system(size: 16, weight: .semibold))
                             .foregroundColor(.white)
                             .frame(maxWidth: .infinity)
-                            .padding(14)
-                            .background(Color.white.opacity(0.06))
-                            .cornerRadius(10)
+                            .padding(.vertical, 16)
+                            .background(GymOSColors.primaryPurple)
+                            .cornerRadius(14)
                     }
-                    
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("REPS")
-                            .font(.system(size: 10, weight: .medium))
-                            .foregroundColor(Color.white.opacity(0.25))
-                            .tracking(1.5)
-                        
-                        TextField("0", text: $repsText)
-                            .keyboardType(.numberPad)
-                            .font(.system(size: 32, weight: .bold))
-                            .foregroundColor(.white)
-                            .frame(maxWidth: .infinity)
-                            .padding(14)
-                            .background(Color.white.opacity(0.06))
-                            .cornerRadius(10)
-                    }
+                    .disabled(weightText.isEmpty || repsText.isEmpty)
                 }
-                
-                // Confirm button
-                Button {
-                    let weight = Double(weightText) ?? 0
-                    let reps = Int(repsText) ?? 0
-                    workoutManager.updateSet(exerciseIndex: exerciseIndex, setIndex: setIndex, reps: reps, weight: weight)
-                    workoutManager.currentWorkout?.exercises[exerciseIndex].sets[setIndex].mode = selectedMode
-                    workoutManager.currentWorkout?.exercises[exerciseIndex].variation = variationText
-                    workoutManager.completeSet(exerciseIndex: exerciseIndex, setIndex: setIndex)
-                    dismiss()
-                } label: {
-                    Text("Log set")
-                        .font(.system(size: 16, weight: .semibold))
-                        .foregroundColor(.white)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 16)
-                        .background(GymOSColors.primaryPurple)
-                        .cornerRadius(14)
-                }
-                .disabled(weightText.isEmpty || repsText.isEmpty)
+                .padding(24)
             }
-            .padding(24)
         }
         .onTapGesture {
             UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
@@ -815,7 +826,6 @@ struct CreateExerciseInWorkoutSheet: View {
 }
 
 // MARK: - Session Note Sheet
-// MARK: - Session Note Sheet
 struct SessionNoteSheet: View {
     @EnvironmentObject var workoutManager: WorkoutManager
     @Environment(\.dismiss) var dismiss
@@ -960,6 +970,8 @@ struct ReflectionView: View {
             }
             .padding(24)
         }
+        .onTapGesture {
+            UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+        }
     }
 }
-
