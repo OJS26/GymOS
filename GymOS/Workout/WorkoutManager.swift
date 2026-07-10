@@ -288,18 +288,18 @@ class WorkoutManager: ObservableObject {
     func weightSuggestion(for exercise: Exercise, variation: String) -> String? {
         guard !exercise.isFixedReps else { return nil }
         
-        // Get history filtered to this specific exercise AND variation
         let history = getExerciseHistory(for: exercise, variation: variation)
         guard let lastSession = history.last else { return nil }
         
-        // Only look at strength sets for progression
         let strengthSets = lastSession.sets.filter { $0.isCompleted && $0.mode == .strength }
         guard !strengthSets.isEmpty else { return nil }
         
         let avgWeight = strengthSets.map { $0.weight }.reduce(0, +) / Double(strengthSets.count)
-        let avgReps = strengthSets.map { $0.reps }.reduce(0, +) / strengthSets.count
         
-        let suggested = avgReps >= 10 ? avgWeight + 2.5 : avgWeight
+        // Only suggest increase if ALL strength sets hit 10+ reps
+        let allHitTen = strengthSets.allSatisfy { $0.reps >= 10 }
+        
+        let suggested = allHitTen ? avgWeight + 2.5 : avgWeight
         return "\(suggested.clean)kg"
     }
     
