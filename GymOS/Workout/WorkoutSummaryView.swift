@@ -1,8 +1,12 @@
 import SwiftUI
+import MuscleMap
+
 
 struct WorkoutSummaryView: View {
     let workout: Workout
     let onDismiss: () -> Void
+    
+    @State private var mapSide: BodySide = .front
     
     private var totalSets: Int {
         workout.exercises.flatMap { $0.sets }.filter { $0.isCompleted }.count
@@ -18,6 +22,24 @@ struct WorkoutSummaryView: View {
         let mins = Int(workout.duration / 60)
         if mins < 60 { return "\(mins)m" }
         return "\(mins / 60)h \(mins % 60)m"
+    }
+    
+    private var sessionIntensities: [MuscleIntensity] {
+        var muscleVolume: [String: Double] = [:]
+        
+        for session in workout.exercises {
+            let completedSets = session.sets.filter { $0.isCompleted }
+            let volume = completedSets.reduce(0.0) { $0 + ($1.weight * Double($1.reps)) }
+            for muscle in session.exercise.muscleGroups {
+                muscleVolume[muscle, default: 0] += volume
+            }
+        }
+        
+        return muscleVolume.compactMap { name, volume -> MuscleIntensity? in
+            guard let muscle = muscleMapping[name] else { return nil }
+            let intensity = min(volume / 2000.0, 1.0)
+            return MuscleIntensity(muscle: muscle, intensity: intensity)
+        }
     }
     
     var body: some View {
@@ -62,6 +84,61 @@ struct WorkoutSummaryView: View {
                 .background(Color.white.opacity(0.04))
                 .overlay(Rectangle().stroke(Color.white.opacity(0.06), lineWidth: 0.5))
                 .padding(.bottom, 32)
+                
+                // Body map
+                VStack(spacing: 8) {
+                    HStack(spacing: 0) {
+                        Button {
+                            withAnimation(.easeInOut(duration: 0.2)) { mapSide = .front }
+                        } label: {
+                            Text("Front")
+                                .font(.system(size: 13, weight: .medium))
+                                .foregroundColor(mapSide == .front ? .white : Color.white.opacity(0.35))
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 8)
+                                .background(mapSide == .front ? GymOSColors.primaryPurple : Color.clear)
+                        }
+                        Button {
+                            withAnimation(.easeInOut(duration: 0.2)) { mapSide = .back }
+                        } label: {
+                            Text("Back")
+                                .font(.system(size: 13, weight: .medium))
+                                .foregroundColor(mapSide == .back ? .white : Color.white.opacity(0.35))
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 8)
+                                .background(mapSide == .back ? GymOSColors.primaryPurple : Color.clear)
+                        }
+                    }
+                    .background(Color.white.opacity(0.06))
+                    .cornerRadius(10)
+                    .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.white.opacity(0.08), lineWidth: 0.5))
+                    .padding(.horizontal, 24)
+
+                    BodyView(gender: .male, side: mapSide)
+                        .heatmap(sessionIntensities, colorScale: HeatmapColorScale(colors: [
+                            Color(red: 0.23, green: 0.23, blue: 0.28),
+                            Color(red: 0.18, green: 0.6, blue: 0.9),
+                            Color(red: 1.0, green: 0.85, blue: 0.2),
+                            Color(red: 0.2, green: 0.78, blue: 0.35),
+                            Color(red: 0.95, green: 0.25, blue: 0.25)
+                        ]))
+                        .bodyStyle(BodyViewStyle(
+                            defaultFillColor: Color(red: 0.23, green: 0.23, blue: 0.28),
+                            strokeColor: Color(red: 0.15, green: 0.15, blue: 0.2),
+                            strokeWidth: 0.5,
+                            selectionColor: GymOSColors.primaryPurple,
+                            selectionStrokeColor: GymOSColors.primaryPurple,
+                            selectionStrokeWidth: 1.5,
+                            headColor: Color(red: 0.18, green: 0.18, blue: 0.22),
+                            hairColor: Color(red: 0.12, green: 0.12, blue: 0.15),
+                            shadowColor: .clear,
+                            shadowRadius: 0,
+                            shadowOffset: .zero
+                        ))
+                        .frame(height: 280)
+                        .padding(.horizontal, 24)
+                }
+                .padding(.bottom, 24)
                 
                 // Exercise breakdown
                 Text("Exercises")
