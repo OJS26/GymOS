@@ -356,58 +356,102 @@ struct SetRow: View {
     let onTap: () -> Void
     let onDelete: () -> Void
 
+    @State private var offset: CGFloat = 0
+    @State private var showingDelete = false
+
     var body: some View {
-        HStack {
-            Text("\(setNumber)")
-                .font(.system(size: 13, weight: .medium))
-                .foregroundColor(Color.white.opacity(0.3))
-                .frame(width: 36, alignment: .leading)
-
-            Spacer()
-
-            Text(set.isCompleted ? set.weight.clean : "—")
-                .font(.system(size: 15, weight: .medium))
-                .foregroundColor(set.isCompleted ? .white : Color.white.opacity(0.2))
-                .frame(width: 60, alignment: .center)
-
-            Spacer()
-
-            Text(set.isCompleted ? "\(set.reps)" : "—")
-                .font(.system(size: 15, weight: .medium))
-                .foregroundColor(set.isCompleted ? .white : Color.white.opacity(0.2))
-                .frame(width: 60, alignment: .center)
-
-            Spacer()
-
-            HStack(spacing: 6) {
-                Circle()
-                    .fill(set.mode == .strength ? GymOSColors.primaryPurple : .orange)
-                    .frame(width: 6, height: 6)
-                    .opacity(set.isCompleted ? 1 : 0)
-
-                Image(systemName: set.isCompleted ? "checkmark.circle.fill" : "circle")
-                    .font(.system(size: 22))
-                    .foregroundColor(set.isCompleted ? GymOSColors.primaryPurple : Color.white.opacity(0.2))
+        ZStack(alignment: .trailing) {
+            // Delete background
+            if showingDelete {
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(Color.red.opacity(0.8))
+                    .overlay(
+                        Button {
+                            onDelete()
+                        } label: {
+                            Image(systemName: "trash")
+                                .foregroundColor(.white)
+                                .font(.system(size: 16))
+                        }
+                        .padding(.trailing, 16),
+                        alignment: .trailing
+                    )
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 2)
             }
-            .frame(width: 44)
 
-            // Delete button — visible, no swipe needed
-            Button {
-                onDelete()
-            } label: {
-                Image(systemName: "minus.circle")
-                    .font(.system(size: 16))
-                    .foregroundColor(Color.white.opacity(0.15))
+            // Main row
+            HStack {
+                Text("\(setNumber)")
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundColor(Color.white.opacity(0.3))
+                    .frame(width: 36, alignment: .leading)
+
+                Spacer()
+
+                Text(set.isCompleted ? set.weight.clean : "—")
+                    .font(.system(size: 15, weight: .medium))
+                    .foregroundColor(set.isCompleted ? .white : Color.white.opacity(0.2))
+                    .frame(width: 60, alignment: .center)
+
+                Spacer()
+
+                Text(set.isCompleted ? "\(set.reps)" : "—")
+                    .font(.system(size: 15, weight: .medium))
+                    .foregroundColor(set.isCompleted ? .white : Color.white.opacity(0.2))
+                    .frame(width: 60, alignment: .center)
+
+                Spacer()
+
+                HStack(spacing: 6) {
+                    Circle()
+                        .fill(set.mode == .strength ? GymOSColors.primaryPurple : .orange)
+                        .frame(width: 6, height: 6)
+                        .opacity(set.isCompleted ? 1 : 0)
+
+                    Image(systemName: set.isCompleted ? "checkmark.circle.fill" : "circle")
+                        .font(.system(size: 22))
+                        .foregroundColor(set.isCompleted ? GymOSColors.primaryPurple : Color.white.opacity(0.2))
+                }
+                .frame(width: 44)
             }
-            .buttonStyle(.plain)
-            .frame(width: 28)
-        }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 10)
-        .background(set.isCompleted ? GymOSColors.primaryPurple.opacity(0.05) : Color.clear)
-        .contentShape(Rectangle())
-        .onTapGesture {
-            onTap()
+            .padding(.horizontal, 16)
+            .padding(.vertical, 10)
+            .background(set.isCompleted ? GymOSColors.primaryPurple.opacity(0.05) : Color.clear)
+            .contentShape(Rectangle())
+            .offset(x: offset)
+            .onTapGesture {
+                if showingDelete {
+                    withAnimation(.spring()) {
+                        offset = 0
+                        showingDelete = false
+                    }
+                } else {
+                    onTap()
+                }
+            }
+            .gesture(
+                DragGesture(minimumDistance: 20, coordinateSpace: .local)
+                    .onChanged { value in
+                        // Only allow left swipe
+                        if value.translation.width < 0 {
+                            offset = max(value.translation.width, -70)
+                        } else if showingDelete {
+                            offset = min(value.translation.width - 70, 0)
+                        }
+                    }
+                    .onEnded { value in
+                        withAnimation(.spring()) {
+                            if value.translation.width < -40 {
+                                offset = -70
+                                showingDelete = true
+                            } else {
+                                offset = 0
+                                showingDelete = false
+                            }
+                        }
+                    }
+            )
         }
     }
 }
