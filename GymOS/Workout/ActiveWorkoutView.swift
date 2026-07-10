@@ -15,6 +15,8 @@ struct ActiveWorkoutView: View {
     @State private var completedWorkout: Workout? = nil
     @State private var notingExerciseIndex: Int? = nil
     @State private var showingReflection = false
+    @State private var showingPB = false
+    @State private var pbExerciseName = ""
 
     var body: some View {
         ZStack {
@@ -110,8 +112,63 @@ struct ActiveWorkoutView: View {
                     .padding(.top, 16)
                 }
             }
-        }
-        .sheet(item: $logSheet) { data in
+            // PB Celebration
+                        if showingPB {
+                            VStack {
+                                Spacer()
+                                HStack(spacing: 10) {
+                                    Text("🏆")
+                                        .font(.system(size: 24))
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text("Personal Best!")
+                                            .font(.system(size: 14, weight: .bold))
+                                            .foregroundColor(.white)
+                                        Text(pbExerciseName)
+                                            .font(.system(size: 12))
+                                            .foregroundColor(Color.white.opacity(0.7))
+                                    }
+                                    Spacer()
+                                }
+                                .padding(16)
+                                .background(Color(red: 0.15, green: 0.12, blue: 0.35))
+                                .cornerRadius(14)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 14)
+                                        .stroke(GymOSColors.primaryPurple, lineWidth: 1)
+                                )
+                                .padding(.horizontal, 20)
+                                .padding(.bottom, 20)
+                                .transition(.move(edge: .bottom).combined(with: .opacity))
+                                .onTapGesture {
+                                    withAnimation {
+                                        showingPB = false
+                                    }
+                                }
+                                .onAppear {
+                                    DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+                                        withAnimation {
+                                            showingPB = false
+                                        }
+                                    }
+                                }
+                            }
+                            .animation(.spring(), value: showingPB)
+                        }
+                    } // <- this closes the ZStack
+                    .sheet(item: $logSheet, onDismiss: {
+            // Check if any set is a new PB
+            if let workout = workoutManager.currentWorkout {
+                for (exIndex, session) in workout.exercises.enumerated() {
+                    for setIndex in session.sets.indices {
+                        if workoutManager.isPersonalBest(exerciseIndex: exIndex, setIndex: setIndex) {
+                            pbExerciseName = session.exercise.name
+                            showingPB = true
+                            return
+                        }
+                    }
+                }
+            }
+        }) { data in
             LogSetSheet(
                 exerciseIndex: data.exerciseIndex,
                 setIndex: data.setIndex,

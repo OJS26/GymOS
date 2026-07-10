@@ -246,6 +246,23 @@ class WorkoutManager: ObservableObject {
             .max { ($0.weight * Double($0.reps)) < ($1.weight * Double($1.reps)) }
     }
     
+    func isPersonalBest(exerciseIndex: Int, setIndex: Int) -> Bool {
+        guard let workout = currentWorkout else { return false }
+        let session = workout.exercises[exerciseIndex]
+        let set = session.sets[setIndex]
+        guard set.isCompleted && set.mode == .strength else { return false }
+        
+        let currentVolume = set.weight * Double(set.reps)
+        
+        let history = getExerciseHistory(for: session.exercise, variation: session.variation)
+        let allSets = history.flatMap { $0.sets }
+        let strengthSets = allSets.filter { $0.isCompleted && $0.mode == .strength }
+        let volumes = strengthSets.map { $0.weight * Double($0.reps) }
+        let historicBest = volumes.max() ?? 0
+        
+        return currentVolume > historicBest
+    }
+    
     // MARK: - Data Analysis
     var currentStreak: Int {
         var streak = 0
