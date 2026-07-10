@@ -165,9 +165,10 @@ struct TodayView: View {
             }
             .navigationBarHidden(true)
         }
-        .fullScreenCover(isPresented: $showingWorkout) {
+        .sheet(isPresented: $showingWorkout) {
             ActiveWorkoutView()
                 .environmentObject(workoutManager)
+                .interactiveDismissDisabled(false)
         }
     }
 }
@@ -227,10 +228,4 @@ struct RoutineRow: View {
             .padding(.vertical, 16)
         }
     }
-}
-
-#Preview {
-    TodayView()
-        .environmentObject(WorkoutManager())
-        .environmentObject(ThemeManager())
 }
