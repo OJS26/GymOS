@@ -198,6 +198,10 @@ struct ExerciseCard: View {
                     Text(session.exercise.name)
                         .font(.system(size: 17, weight: .semibold))
                         .foregroundColor(.white)
+                    
+                    Text(session.exercise.muscleGroups.joined(separator: " · "))
+                        .font(.system(size: 11))
+                        .foregroundColor(Color.white.opacity(0.3))
 
                     if let last = lastSession {
                         Text("Last: " + last.sets.filter { $0.isCompleted }.map {
