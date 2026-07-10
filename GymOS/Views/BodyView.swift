@@ -240,7 +240,7 @@ let muscleMapping: [String: Muscle] = [
     "Upper Chest": .upperChest,
     "Mid Chest": .chest,
     "Lower Chest": .lowerChest,
-    "Front Delt": .frontDeltoid,
+    "Front Delt": .deltoids,
     "Side Delt": .deltoids,
     "Rear Delt": .rearDeltoid,
     "Bicep": .biceps,
